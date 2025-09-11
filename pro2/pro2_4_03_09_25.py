@@ -33,7 +33,7 @@ import openpyxl
 #     print("---Fin del renglon---\n")
 
 
-datos_excel=openpyxl.load_workbook('MiArchivoExcel.xlsx')
+datos_excel=openpyxl.load_workbook(r'C:\Users\Dell\Downloads\Logica_programacion_git\Logica_de_programacion\MiArchivoExcel.xlsx')
 data_frame=datos_excel.active
 
 data=[]
