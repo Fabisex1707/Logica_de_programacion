@@ -4,6 +4,8 @@ import pandas as pd
 
 data_lista=[10,20,30]
 data_serie=pd.Series(data_lista)
-
+index_personalizado=["Fabi","Marta","Carlos"]
+print(data_serie[0])
+print(type(data_serie[0]))
+data_serie.index=index_personalizado
 print(data_serie)
-
