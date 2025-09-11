@@ -15,3 +15,8 @@ index_personalizado=["Fabi","Marta","Carlos"]
 data_serie.index=index_personalizado
 #vista con las etiquetas
 print(data_serie)
+#Acceso de a los datos por medio de las etiquetas
+print(data_serie["Fabi"])
+#Acceso a un dato inexistente por medio de etiquetas # KeyError
+#data_serie["Felipe"]
+
