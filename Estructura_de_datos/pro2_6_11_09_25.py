@@ -40,4 +40,8 @@ Ejemplo que exporta el contenido de un DataFrame a un CSV incluyendo
 encabezados y valores del índice
 """
 datos_df.to_csv(r'df_en_csv.csv',header=True,index=True)
+"""
+Ejemplo que exporta el contenido de un DataFrame a un CSV incluyendo
+encabezados pero no valores del índice
+"""
 datos_df.to_csv(r'df_en_csv_2.csv',header=True,index=False)
