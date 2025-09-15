@@ -31,7 +31,7 @@ media_pesos_2=datos_df.mean()["Peso"]
 print(f"\nLa media de los pesos es: {media_pesos_2}")
 
 #persistencia y recuperacion de un dataframe
-dict_datos={"Peso":[87,78,45,22,90],"Estatura":[121,180,199,150,165],"Edad":[22,19,18,34,67]}
+dict_datos={"Peso":[87,78,45,22,90,1000],"Estatura":[121,180,199,150,165,1000],"Edad":[22,19,18,34,67,100]}
 datos_df=pd.DataFrame(dict_datos)
 print(datos_df)
 
