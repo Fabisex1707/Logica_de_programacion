@@ -12,7 +12,7 @@ import time
 # print(math.pow(3,2))# x a la potencia y
 # print(math.sqrt(4))
 # print(f"{math.pi:.4f}")
-# print(math.isclose(100,4,rel_tol=1,abs_tol=1e-6))#numeros grandes,rel_tol=% 1==100%
+# print(math.isclose(100,-1,rel_tol=1,abs_tol=1e-6))#numeros grandes,rel_tol=% 1==100%
 # contador = 0
 # incremento = 0.1
 
@@ -50,7 +50,7 @@ print(type(mi_fecha.month))
 # #formato a una fecha que creamos nosotros
 # print(mi_fecha.strftime("%d-%B-%y"))
 # print(type(fecha_actual))
-# print(fecha_actual)
+# print(fecha_actual.hour)
 # print(fecha_actual.day)
 # print(fecha_actual.month)
 # print(fecha_actual.year)

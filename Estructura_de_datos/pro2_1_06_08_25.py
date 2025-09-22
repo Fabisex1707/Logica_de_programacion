@@ -82,11 +82,14 @@ def calcula_edad(dt_string:str) -> str:
     """Calcula la edad del usario con la fecha de nacimiento del mismo, es un texto y el formato para la fecha es 'dd/mm/aaaa'."""
     try:
         new_date=datetime.datetime.strptime(dt_string,"%d/%m/%Y").date()
-        return f"\nTu edad a dia de hoy es: {datetime.datetime.today().year-new_date.year} años."
+        if (datetime.datetime.today().month,datetime.datetime.today().day)>=(new_date.month,new_date.day):
+            return f"\nTu edad a dia de hoy es: {datetime.datetime.today().year-new_date.year} años."
+        else:
+            return f"\nTu edad a dia de hoy es: {(datetime.datetime.today().year-new_date.year)-1} años."
     except ValueError as e:
         return(f"details: el formato no coincide! {e}")
 
-print(calcula_edad("09/07/2005"))
+print(calcula_edad("21/06/2008"))
 
 
 
