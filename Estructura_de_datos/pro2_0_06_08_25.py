@@ -44,7 +44,7 @@ import time
 # print(hora.second)
 # print(hora.microsecond)
 # #crea tu fecha
-# fecha_actual=datetime.datetime.today()
+fecha_actual=datetime.datetime.today()
 mi_fecha=datetime.date(2025,9,9)
 print(type(mi_fecha.month))
 # #formato a una fecha que creamos nosotros
@@ -67,9 +67,9 @@ print(type(mi_fecha.month))
 # #calculos con datetime
 # #adelnata n dias desde hoy
 # print(fecha_actual)
-# no_dias=int(input(f"Dime cuantos dias quieres adelantar a partir de hoy {fecha_actual}: \n"))
-# new_date=fecha_actual+datetime.timedelta(days=+no_dias,hours=+3)
-# print(new_date)
+no_dias=int(input(f"Dime cuantos dias quieres adelantar a partir de hoy {fecha_actual}: \n"))
+new_date=fecha_actual+datetime.timedelta(days=+no_dias,hours=+3)
+print(new_date)
 
 #edad por la fecha de nacimiento
 # my_date_of_birth=input("Dime tu fecha de nacimiento dd/mm/aaaa: \n")
