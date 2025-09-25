@@ -13,10 +13,6 @@ def convertir_str_a_date():
             print("El formato de la fecha es invalida digitela de nuevo!")
             continue
 
-def registrar_salon(registro_salones:dict,contador_id:int,nombre:str,cupo:int):
-    registro_salones[contador_id]={"Nombre":nombre,"Cupo":cupo,"Turno":{"Matutino":True,"Vespertino":True,"Nocturno":True}}
-    return f"Se registro con exito el salon {nombre}!"
-
 def mostrar_datos_clientes(diccionario_clientes:dict):
     lista_clientes_con_orden=[]
     for id_cliente,datos in diccionario_clientes.items():
