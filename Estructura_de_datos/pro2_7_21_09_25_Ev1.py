@@ -12,6 +12,7 @@ def convertir_str_a_date():
         except:
             print("El formato de la fecha es invalida digitela de nuevo!")
             continue
+
 def registrar_salon(registro_salones:dict,contador_id:int,nombre:str,cupo:int):
     registro_salones[contador_id]={"Nombre":nombre,"Cupo":cupo,"Turno":{"Matutino":True,"Vespertino":True,"Nocturno":True}}
     return f"Se registro con exito el salon {nombre}!"
@@ -20,7 +21,7 @@ def mostrar_datos_clientes(diccionario_clientes:dict):
     lista_clientes_con_orden=[]
     for id_cliente,datos in diccionario_clientes.items():
         lista_clientes_con_orden.append([datos["Apellidos"],datos["Nombre"],id_cliente])
-    lista_clientes_con_orden.sort(key=lambda index_lista: index_lista[2])
+    lista_clientes_con_orden.sort(key=lambda index_lista: index_lista[0])
     print(tabulate(lista_clientes_con_orden,headers=["Apellidos","Nombre Cliente","Id Cliente"],tablefmt="fancy_grid"))
 
 def estado_turno(valor: bool) -> str:
@@ -126,12 +127,7 @@ def main():
                         print(f"\n{'-'*60}")
                         continue
                     print("\nId de salon aceptado!, ahora vamos a elejir el turno\n")
-                    
-
-
-                    
-
-
+                    print(f"Datos del salon que elijio el usario: {salon_encontrado}")
             else:
                 print("\n--AVISO: Operacion candelada!, volviendo la menu principal...--\n")
                 continue
