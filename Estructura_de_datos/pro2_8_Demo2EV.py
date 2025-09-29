@@ -37,7 +37,68 @@ def registrar_cliente(diccionario_cliente: dict):
             break
 
         except:
-            print("Ocurrio un error")        
+            print("Ocurrio un error")
+
+def registrar_salon(diccionario_salones: dict):
+    """
+    Registra un nuevo salón en el diccionario de salones.
+
+    Pide al usuario el nombre, cupo y la disponibilidad de cada turno,
+    genera un nuevo ID y lo agrega al diccionario.
+    """
+    while True:
+        try:
+            nombre_salon = input("\nEscribe el nombre del salón a registrar o [Enter] para cancelar: ").strip()
+            if not nombre_salon:
+                print("\n--AVISO: Operación cancelada.--")
+                break
+            elif nombre_salon.strip()=='' or (not (all(letra.isalpha() or letra.isspace() for letra in nombre_salon.upper()))):
+                print("El nombre del salon solo debe contener letras!")
+                continue
+
+            cupo_str = input(f"Escribe el cupo para el salón '{nombre_salon}': ").strip()
+            if not cupo_str.isdigit() or int(cupo_str) <= 0:
+                print("\nError: El cupo debe ser un número entero y mayor que cero.")
+                print(f"{'-'*60}")
+                continue
+            
+            cupo = int(cupo_str)
+
+            # --- Nueva sección para definir los turnos ---
+            print("\nAhora define la disponibilidad de los turnos:")
+            turnos_disponibles = {}
+            for turno in ["Matutino", "Vespertino", "Nocturno"]:
+                while True:
+                    respuesta = input(f"¿El turno {turno} estará disponible? (1: Sí / 2: No): ").strip()
+                    if respuesta == '1':
+                        turnos_disponibles[turno] = True
+                        break
+                    elif respuesta == '2':
+                        turnos_disponibles[turno] = False
+                        break
+                    else:
+                        print("Error: Por favor, introduce solo '1' para Sí o '2' para No.")
+            
+            # Generar un nuevo ID para el salón
+            id_salon = max(diccionario_salones.keys(), default=0) + 1
+            
+            # Agregar el nuevo salón al diccionario con los turnos especificados
+            diccionario_salones[id_salon] = {
+                "Nombre_salon": nombre_salon,
+                "Cupo": cupo,
+                "Turno": turnos_disponibles
+            }
+
+            print(f"\n¡El salón '{nombre_salon}' se ha registrado correctamente con el ID {id_salon}!")
+            mostrar_datos_salon(diccionario_salones) # Mostramos la tabla actualizada
+
+            continuar = input("¿Deseas registrar otro salón? (1: Sí / Otro: No): ")
+            if continuar != '1':
+                break
+
+        except Exception as e:
+            print(f"Ocurrió un error inesperado: {e}")
+            break
 
 def mostrar_datos_clientes(diccionario_clientes: dict):
     lista_clientes_con_orden = []
@@ -298,6 +359,8 @@ def main():
             consultar_reservaciones_por_fecha(reservaciones)
         elif op == "4":
             registrar_cliente(clientes)
+        elif op== "5":
+            registrar_salon(salones)
         else:
             print("\nEsa opción no existe!\n")
             continue
