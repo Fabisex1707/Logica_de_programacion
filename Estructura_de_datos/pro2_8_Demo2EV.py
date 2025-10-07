@@ -314,7 +314,7 @@ def main():
                             print("Turno inválido, intenta de nuevo.")
                             continue
                         break
-
+                    
                     ocupado = False
                     for r in reservaciones.values():
                         if (r["id_sala"] == salon_encontrado[0] and

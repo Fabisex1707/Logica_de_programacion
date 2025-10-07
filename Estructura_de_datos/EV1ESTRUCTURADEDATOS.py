@@ -348,6 +348,11 @@ def agregar_reservacion(clientes, salones, reservaciones, id_reservaciones_conta
             if turno not in ["Matutino", "Vespertino", "Nocturno"]:
                 print("Turno inválido, intenta de nuevo.")
                 continue
+            elif salones[salon_encontrado[0]]["Turno"][turno]:
+                print("\nTurno aceptado!\n")
+            else:
+                print(f"Esa sala no maneja el turno {turno}, elija otor por favor.\n")
+                continue
             break
 
         ocupado = False
