@@ -189,7 +189,6 @@ def mostrar_datos_salon_disponible_para_una_fecha(fecha_de_reservacion_dt: str, 
                 "Nocturno": noc
             }
         }
-    print(lista_salas_con_orden)
     lista_salas_con_orden.sort(key=lambda index_lista: index_lista[0])
     print(tabulate(lista_salas_con_orden, headers=["Id de la sala", "Nombre de la sala", "Cupo", "Turno matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
     return salas_con_turnos_ocupados
@@ -464,7 +463,6 @@ def main():
     """
     Función principal que muestra el menú y gestiona el flujo del sistema de reservaciones.
     """
-    id_reservaciones_contador = 2
     clientes = {}
     salones = {}
     reservaciones = {}
