@@ -39,7 +39,7 @@ def registrar_cliente(diccionario_cliente: dict):
         "Nombre": nombre,
         "Apellidos": apellido
         }
-        print("Se ha registrado correctamente al cliente.\n")
+        print("\n--Se ha registrado correctamente al cliente.--\n")
         mostrar_datos_clientes(diccionario_cliente)
         break
 
@@ -50,61 +50,58 @@ def registrar_salon(diccionario_salones: dict):
     Solicita nombre, cupo y disponibilidad de turnos, valida los datos y agrega el salón.
     """
     while True:
-        nombre_salon = input("\nEscribe el nombre del salón a registrar o [Enter] para cancelar: ").strip()
-        if not nombre_salon:
-            print("\n--AVISO: Operación cancelada.--")
-            break
-        elif nombre_salon.strip()=='' or (not (all(letra.isalpha() or letra.isspace() for letra in nombre_salon.upper()))):
-            print("El nombre del salon solo debe contener letras!")
-            continue
+        print(f"\n{'*'*70}")
+        print("\tVamos a registrar una sala nueva.")
+        print(f"{'*'*70}\n")
+        nombre_salon = input("\nEscribe el nombre del salón a registrar o [Enter] para cancelar: ").strip().upper()
+        if nombre_salon:
+            if nombre_salon.strip()=='' or (not (all(letra.isalpha() or letra.isspace() for letra in nombre_salon))):
+                print("El nombre del salon solo debe contener letras!\n")
+                continue
 
-        cupo_str = input(f"Escribe el cupo para el salón '{nombre_salon}': ").strip()
-        if not cupo_str.isdigit() or int(cupo_str) <= 0:
-            print("\nError: El cupo debe ser un número entero y mayor que cero.")
-            print(f"{'-'*60}")
-            continue
-            
-        cupo = int(cupo_str)
-
-            # Solicita la disponibilidad de cada turno
-        print("\nAhora define la disponibilidad de los turnos:")
-        turnos_disponibles = {}
-        for turno in ["Matutino", "Vespertino", "Nocturno"]:
-            while True:
-                respuesta = input(f"¿El turno {turno} estará disponible? (1: Sí / 2: No): ").strip()
-                if respuesta == '1':
-                    turnos_disponibles[turno] = True
-                    break
-                elif respuesta == '2':
-                    turnos_disponibles[turno] = False
-                    break
-                else:
-                    print("Error: Por favor, introduce solo '1' para Sí o '2' para No.")
-            
+            cupo_str = input(f"Escribe el cupo para el salón '{nombre_salon}': ").strip()   
+            try:
+                cupo = int(cupo_str)
+            except:
+                print(f"\n{'*'*70}")
+                print("--ERROR: Debes escribir solo numero enteros.--")
+                print(f"{'*'*70}\n")
+                continue
+                
             # Genera un nuevo ID para el salón y lo agrega al diccionario
-        id_salon = max(diccionario_salones.keys(), default=0) + 1
-        diccionario_salones[id_salon] = {
-            "Nombre_salon": nombre_salon,
-            "Cupo": cupo,
-            "Turno": turnos_disponibles
-        }
-
-        print(f"\n¡El salón '{nombre_salon}' se ha registrado correctamente con el ID {id_salon}!")
-        mostrar_datos_salon(diccionario_salones)
-
-        continuar = input("¿Deseas registrar otro salón? (1: Sí / Otro: No): ")
-        if continuar != '1':
+            id_salon = max(diccionario_salones.keys(), default=0) + 1
+            diccionario_salones[id_salon] = {
+                "Nombre_salon": nombre_salon,
+                "Cupo": cupo,
+                "Turno": {"Matutino": True, "Vespertino": True, "Nocturno": True}
+            }
+            print(f"\n{'*'*70}")
+            print(f"¡El salón '{nombre_salon}' se ha registrado correctamente con el ID {id_salon}!")
+            print(f"{'*'*70}\n")
+            mostrar_datos_salon(diccionario_salones)
+            print(f"{'-'*70}\n")
+        else:
+            print(f"\n{'*'*70}")
+            print("\t--AVISO: Operación cancelada, volviendo al menu principal.--")
+            print(f"{'*'*70}\n")
             break
 
 def mostrar_datos_clientes(diccionario_clientes: dict):
     """
     Muestra todos los clientes registrados en formato de tabla ordenada por apellidos.
     """
-    lista_clientes_con_orden = []
-    for id_cliente, datos in diccionario_clientes.items():
-        lista_clientes_con_orden.append([datos["Apellidos"], datos["Nombre"], id_cliente])
-    lista_clientes_con_orden.sort(key=lambda index_lista: index_lista[0])
-    print(tabulate(lista_clientes_con_orden, headers=["Apellidos", "Nombre Cliente", "Id Cliente"], tablefmt="fancy_grid"))
+    if diccionario_clientes:
+        lista_clientes_con_orden = []
+        for id_cliente, datos in diccionario_clientes.items():
+            lista_clientes_con_orden.append([datos["Apellidos"], datos["Nombre"], id_cliente])
+        lista_clientes_con_orden.sort(key=lambda index_lista: index_lista[0])
+        print(tabulate(lista_clientes_con_orden, headers=["Apellidos", "Nombre Cliente", "Id Cliente"], tablefmt="fancy_grid"))
+        return True
+    else:
+        print(f"\n{'*'*70}")
+        print("\t--AVISO: No hay clientes aun.--")
+        print(f"{'*'*70}\n")
+        return False
 
 def estado_turno(valor: bool):
     """
@@ -128,6 +125,74 @@ def mostrar_datos_salon(diccionario_salones: dict):
         ])
     lista_salas_con_orden.sort(key=lambda index_lista: index_lista[0])
     print(tabulate(lista_salas_con_orden, headers=["Id de la sala", "Nombre de la sala", "Cupo", "Turno matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
+    return diccionario_salones
+
+def mostrar_datos_salon_disponible_para_una_fecha(fecha_de_reservacion_dt: str, diccionario_salones: dict, diccionario_reservaciones: dict):
+    """
+    Muestra salones indicando qué turnos están ocupados para la fecha indicada.
+    No modifica diccionario_salones original.
+    """
+    # normalizar fecha a objeto date si viene como string
+    if isinstance(fecha_de_reservacion_dt, datetime.date):
+        fecha_dt = fecha_de_reservacion_dt
+    else:
+        try:
+            fecha_dt = datetime.datetime.strptime(str(fecha_de_reservacion_dt), "%d/%m/%Y").date()
+        except:
+            print("Fecha inválida.")
+            return None
+
+    # construir mapping id_sala -> set(turnos) reservados en esa fecha
+    reservados_por_sala = {}
+    for folio, datos_r in diccionario_reservaciones.items():
+        try:
+            fr = datetime.datetime.strptime(datos_r.get("fecha_reservacion", ""), "%d/%m/%Y").date()
+        except:
+            continue
+        if fr == fecha_dt:
+            id_sala = datos_r.get("id_sala")
+            turno = datos_r.get("turno", "").capitalize()
+            if id_sala is None or turno == "":
+                continue
+            reservados_por_sala.setdefault(id_sala, set()).add(turno)
+
+    # si no hay reservaciones para la fecha, mostrar todos los salones tal cual
+    if not reservados_por_sala:
+        print("\n--No hay salones reservados para esa fecha, mostrando todos los salones disponibles.--\n")
+        mostrar_datos_salon(diccionario_salones)
+        return diccionario_salones
+
+    # construir tabla sin mutar el diccionario original
+    lista_salas_con_orden = []
+    salas_con_turnos_ocupados = {}
+    for id_sala, datos in diccionario_salones.items():
+        reservados = reservados_por_sala.get(id_sala, set())
+        mat = False if "Matutino" in reservados else datos["Turno"].get("Matutino", False)
+        ves = False if "Vespertino" in reservados else datos["Turno"].get("Vespertino", False)
+        noc = False if "Nocturno" in reservados else datos["Turno"].get("Nocturno", False)
+
+        lista_salas_con_orden.append([
+            id_sala,
+            datos.get("Nombre_salon", ""),
+            datos.get("Cupo", ""),
+            estado_turno(mat),
+            estado_turno(ves),
+            estado_turno(noc)
+        ])
+
+        salas_con_turnos_ocupados[id_sala] = {
+            "Nombre_salon": datos.get("Nombre_salon", ""),
+            "Cupo": datos.get("Cupo", ""),
+            "Turno": {
+                "Matutino": mat,
+                "Vespertino": ves,
+                "Nocturno": noc
+            }
+        }
+    print(lista_salas_con_orden)
+    lista_salas_con_orden.sort(key=lambda index_lista: index_lista[0])
+    print(tabulate(lista_salas_con_orden, headers=["Id de la sala", "Nombre de la sala", "Cupo", "Turno matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
+    return salas_con_turnos_ocupados
 
 def buscar_cliente(diccionario_clientes: dict):
     """
@@ -135,30 +200,33 @@ def buscar_cliente(diccionario_clientes: dict):
     Si el cliente no existe, da la opción de salir o volver a intentar.
     """
     while True:
-        mostrar_datos_clientes(diccionario_clientes)
-        try:
-            id_cliente_registrado = int(input("Escribe tu numero de cliente: "))
-        except:
-            print("\nDebes de ingresar un numero entero!")
-            print(f"\n{'-'*60}")
-            continue
+        if mostrar_datos_clientes(diccionario_clientes):
+            try:
+                id_cliente_registrado = int(input("Escribe tu numero de cliente: "))
+            except:
+                print("\nDebes de ingresar un numero entero!")
+                print(f"\n{'-'*60}")
+                continue
 
-        if id_cliente_registrado not in diccionario_clientes.keys():
-            print("Ese usuario no esta registrado!\n")
-            salir = input("Quieres salir? 1.SI | 2.No: ")
-            print(f"\n{'-'*60}")
-            if salir != "2":
-                return False
+            if id_cliente_registrado not in diccionario_clientes.keys():
+                print("\n--Ese usuario no esta registrado!--\n")
+                salir = input("Quieres salir al menu principal? 1.SI | 2.No: ")
+                print(f"\n{'-'*60}")
+                if salir != "2":
+                    print("AVISO: La operacion se cancelo! volviendo al menu principal...\n")
+                    return False
+            else:
+                return (id_cliente_registrado, diccionario_clientes[id_cliente_registrado]["Nombre"], diccionario_clientes[id_cliente_registrado]["Apellidos"])
         else:
-            return (id_cliente_registrado, diccionario_clientes[id_cliente_registrado]["Nombre"], diccionario_clientes[id_cliente_registrado]["Apellidos"])
+            return False
 
-def buscar_salon(diccionario_salones: dict):
+
+def buscar_salon(diccionario_salones: dict,):
     """
     Permite buscar y seleccionar un salón por su ID.
     Si el salón no existe, da la opción de salir o volver a intentar.
     """
     while True:
-        mostrar_datos_salon(diccionario_salones)
         try:
             id_salon_registrado = int(input("Escribe el id del salon que quiere reservar: "))
         except:
@@ -193,223 +261,211 @@ def consultar_reservaciones_por_fecha(reservaciones: dict):
         print("No hay reservaciones registradas.")
         return
     while True:
+        fecha_de_evento_str = input("Escribe la fecha del evento (DD/MM/YYYY): ")
+        try:
+            fecha_de_evento_dt = datetime.datetime.strptime(fecha_de_evento_str, "%d/%m/%Y").date()
+        except:
+            print(f"{'*'*70}")
+            print("--ERROR: Formato de fecha inválido.--")
+            print(f"{'*'*70}")
+            return None
+
+        datos_evento_consultado = []
+        for folio, datos_reservacion in reservaciones.items():
+            try:
+                fecha_reservacion = datetime.datetime.strptime(datos_reservacion["fecha_reservacion"], "%d/%m/%Y").date()
+            except:
+                continue
+            if fecha_reservacion==fecha_de_evento_dt:
+                datos_evento_consultado.append([
+                    folio, 
+                    datos_reservacion["nombre_cliente"], 
+                    datos_reservacion["nombre_evento"], 
+                    datos_reservacion["fecha_reservacion"], 
+                    datos_reservacion["turno"].upper()
+                ])
+        print(f"\n{'*'*70}")
+        print(f"\t** REPORTE DE RESERVACION DEL DIA {fecha_de_evento_str} **")
+        print(f"{'*'*70}")
+        if datos_evento_consultado:
+            print(tabulate(datos_evento_consultado, headers=["SALA", "CLIENTE", "EVENTO", "FECHA", "TURNO"], tablefmt="fancy_grid"))
+        else:
+            print(f"{'*'*70}")
+            print("\tAVISO: No hay una reservacion para esa fecha.")
+            print(f"{'*'*70}\n")
+        print("*************** FIN DEL REPORTE ***************\n")
+        return None
+
+def editar_nombre_reservacion(reservaciones: dict):
+    """
+    Permite editar el nombre del evento de una reservación existente, 
+    el usuario debe indicar una fecha para buscar la reservacion.
+    """
+    if reservaciones:
+        print(f"{'-'*70}")
+        print("\tVamos a editar el nombre de una reservación")
+        print(f"{'-'*70}\n")
         fecha_inicio = input("Fecha inicial (DD/MM/YYYY): ")
         fecha_fin = input("Fecha final (DD/MM/YYYY): ")
         try:
             fecha_inicio_dt = datetime.datetime.strptime(fecha_inicio, "%d/%m/%Y").date()
             fecha_fin_dt = datetime.datetime.strptime(fecha_fin, "%d/%m/%Y").date()
-            if fecha_inicio_dt > fecha_fin_dt:
-                print("La fecha inicial no puede ser mayor que la fecha final.")
+        except:
+            print(f"{'*'*70}")
+            print("--ERROR: Formato de fecha inválido.--")
+            print(f"{'*'*70}\n")
+            return None
+
+        eventos = []
+        for folio, datos_reservacion in reservaciones.items():
+            try:
+                fecha_r = datetime.datetime.strptime(datos_reservacion["fecha_reservacion"], "%d/%m/%Y").date()
+            except:
                 continue
-            break
-        except ValueError:
-            print("Formato de fecha inválido. Intenta de nuevo (DD/MM/YYYY).")
-            continue
+            if fecha_inicio_dt <= fecha_r <= fecha_fin_dt:
+                eventos.append((folio, datos_reservacion))
 
-    lista = []
-    for datos in reservaciones.values():
-        try:
-            fecha_r = datetime.datetime.strptime(datos["fecha_reservacion"], "%d/%m/%Y").date()
-        except:
-            continue
-        if fecha_inicio_dt <= fecha_r <= fecha_fin_dt:
-            lista.append([
-                datos["id_sala"],
-                datos["nombre_cliente"],
-                datos["nombre_evento"],
-                datos["fecha_reservacion"],
-                datos["turno"].upper()
-            ])
-    print("\n" + "*"*70)
-    print(f"** REPORTE DE RESERVACIONES DEL {fecha_inicio} AL {fecha_fin} **")
-    print("*"*70)
-    if lista:
-        print(tabulate(lista, headers=["SALA", "CLIENTE", "EVENTO", "FECHA", "TURNO"], tablefmt="fancy_grid"))
-    else:
-        print("No hay reservaciones en ese rango de fechas.")
-    print("*"*70)
-    print("*************** FIN DEL REPORTE ***************\n")
-    """
-    Consulta y muestra todas las reservaciones para una fecha específica en formato de tabla.
-    Si no hay reservaciones para esa fecha, muestra un mensaje.
-    """
-    if not reservaciones:
-        print("No hay reservaciones registradas.")
-        return
-    fecha = input("¿Para qué fecha deseas consultar las reservaciones? (DD/MM/YYYY): ")
-    lista = []
-    for datos in reservaciones.values():
-        if datos["fecha_reservacion"] == fecha:
-            lista.append([
-                datos["id_sala"],
-                datos["nombre_cliente"],
-                datos["nombre_evento"],
-                datos["turno"].upper()
-            ])
-    print("\n" + "*"*70)
-    print(f"**      REPORTE DE RESERVACIONES PARA EL DÍA {fecha}      **")
-    print("*"*70)
-    if lista:
-        print(tabulate(lista, headers=["SALA", "CLIENTE", "EVENTO", "TURNO"], tablefmt="fancy_grid"))
-    else:
-        print("No hay reservaciones para esa fecha o la reservación no existe.")
-    print("*"*70)
-    print("*************** FIN DEL REPORTE ***************\n")
+        if not eventos:
+            print(f"{'*'*70}")
+            print("--AVISO:No hay reservaciones en ese rango.--")
+            print(f"{'*'*70}\n")
+            return None
 
-def editar_nombre_reservacion(reservaciones: dict):
-    """
-    Permite editar el nombre del evento de una reservación existente.
-    El usuario debe indicar un rango de fechas para buscar reservaciones.
-    Se muestran las reservaciones encontradas y el usuario elige el folio a editar.
-    """
-    if not reservaciones:
-        print("No hay reservaciones registradas.")
-        return
-    print("Editar nombre de reservación")
-    fecha_inicio = input("Fecha inicial (DD/MM/YYYY): ")
-    fecha_fin = input("Fecha final (DD/MM/YYYY): ")
-    try:
-        fecha_inicio_dt = datetime.datetime.strptime(fecha_inicio, "%d/%m/%Y").date()
-        fecha_fin_dt = datetime.datetime.strptime(fecha_fin, "%d/%m/%Y").date()
-    except:
-        print("Formato de fecha inválido.")
-        return
+        tabla = [[folio, datos_reservacion["nombre_evento"], datos_reservacion["fecha_reservacion"], datos_reservacion["nombre_salon"], datos_reservacion["turno"]] for folio, datos_reservacion in eventos]
+        print(tabulate(tabla, headers=["Folio", "Nombre del evento", "Fecha", "Nombre de la sala", "Turno"], tablefmt="fancy_grid"))
 
-    eventos = []
-    for folio, r in reservaciones.items():
-        try:
-            fecha_r = datetime.datetime.strptime(r["fecha_reservacion"], "%d/%m/%Y").date()
-        except:
-            continue
-        if fecha_inicio_dt <= fecha_r <= fecha_fin_dt:
-            eventos.append((folio, r))
-
-    if not eventos:
-        print("No hay reservaciones en ese rango.")
-        return
-
-    tabla = [[folio, r["nombre_evento"], r["fecha_reservacion"], r["turno"]] for folio, r in eventos]
-    print(tabulate(tabla, headers=["Folio", "Evento", "Fecha", "Turno"], tablefmt="fancy_grid"))
-
-    while True:
-        try:
-            folio = int(input("Ingresa el folio a editar o Enter para cancelar: ") or 0)
-        except:
-            print("Folio inválido.")
-            return
-        seleccionado = None
-        for f, r in eventos:
-            if f == folio:
-                seleccionado = r
-                break
-        if seleccionado:
-            break
-        else:
-            print("Folio inválido.")
-            return
-
-    while True:
-        nuevo_nombre = input("Nuevo nombre del evento: ").strip()
-        if nuevo_nombre != "" and (not nuevo_nombre.isdigit()):
-            seleccionado["nombre_evento"] = nuevo_nombre
-            print("Evento actualizado.")
-            return
-        print("El nombre no puede estar vacío.")
-
-def agregar_reservacion(clientes, salones, reservaciones, id_reservaciones_contador):
-    usuario_encontrado = buscar_cliente(clientes)
-    if not usuario_encontrado:
-        print("Error: La operacion se cancelo! volviendo al menu principal...")
-        return id_reservaciones_contador
-
-    while True:
-        print(f"\nBienvenido {usuario_encontrado[1]} {usuario_encontrado[2]}")
-        fecha_reservacion = convertir_str_a_date()
-        if not fecha_reservacion:
-            print(f"{'-'*60}\n")
-            print("--AVISO: Operación cancelada!, volviendo al menú principal...--")
-            print(f"\n{'-'*60}")
-            break
-        fecha_actual = datetime.datetime.today().date()
-        diferencia = (fecha_reservacion - fecha_actual).days
-        if diferencia < 2:
-            print("Error: No puedes hacer tu reservación, debe ser con dos días de anticipación!\n")
-            continue
-
-        print("\nFecha aceptada!, ahora vamos a elegir el salón\n")
-        salon_encontrado = buscar_salon(salones)
-        if not salon_encontrado:
-            print("Error: Ese salón no esta registrado!, volviendo al menú de registro de sala...")
-            print(f"\n{'-'*60}")
-            continue
-        print("\nId de salón aceptado!, ahora vamos a elegir el turno\n")
+        # pedir folio hasta que sea válido o cancelar
         while True:
-            turno = input("Elige turno (Matutino / Vespertino / Nocturno): ").strip().capitalize()
-            if turno not in ["Matutino", "Vespertino", "Nocturno"]:
-                print("Turno inválido, intenta de nuevo.")
+            folio_str = input("Ingresa el folio a editar o Enter para cancelar: ")
+            if folio_str.strip() == "":
+                print(f"{'-'*60}\n")
+                print("--AVISO: Operación cancelada!, volviendo al menú principal...--")
+                print(f"\n{'-'*60}\n")
+                return None
+            try:
+                folio_sel = int(folio_str)
+            except:
+                print(f"{'*'*70}")
+                print("--ERROR: Solo se admiten numeros enteros.--")
+                print(f"{'*'*70}\n")
                 continue
-            elif salones[salon_encontrado[0]]["Turno"][turno]:
-                print("\nTurno aceptado!\n")
+
+            seleccionado = next((datos for f, datos in eventos if f == folio_sel), None)
+            if seleccionado is None:
+                print(f"{'-'*60}\n")
+                print("\t\t--Folio inválido.--")
+                print(f"\n{'-'*60}\n")
+                continue
+            break
+
+        # editar nombre
+        while True:
+            nuevo_nombre = input("Nuevo nombre del evento: ").strip()
+            if nuevo_nombre == "" or nuevo_nombre.isdigit():
+                print("El nombre no puede estar vacío o contener solo numeros.\n")
             else:
-                print(f"Esa sala no maneja el turno {turno}, elija otor por favor.\n")
-                continue
-            break
+                seleccionado["nombre_evento"] = nuevo_nombre
+                print("Evento actualizado.\n")
+                print(f"{'-'*70}")
+                return
+    else:
+        print("No hay reservaciones registradas.")
+        return None
 
-        ocupado = False
-        for r in reservaciones.values():
-            if (r["id_sala"] == salon_encontrado[0] and
-                r["fecha_reservacion"] == fecha_reservacion.strftime("%d/%m/%Y") and
-                r["turno"] == turno):
-                ocupado = True
-                break
-
-        if ocupado:
-            print("Ese turno ya está reservado en esa sala para esa fecha.")
-            continue
-
+def agregar_reservacion(clientes, salones, reservaciones):
+    usuario_encontrado = buscar_cliente(clientes)
+    if usuario_encontrado:
         while True:
-            nombre_evento = input("Escribe el nombre del evento: ").strip()
-            if nombre_evento == "" or nombre_evento.isdigit():
-                print("El nombre no puede estar vacío. Intenta de nuevo.")
-                continue
-            break
+            print(f"\n{'*'*70}")
+            print(f"\tBienvenido {usuario_encontrado[1]} {usuario_encontrado[2]}")
+            print(f"{'*'*70}\n")
+            fecha_reservacion = convertir_str_a_date()
+            if fecha_reservacion:
+                fecha_actual = datetime.datetime.today().date()
+                diferencia = (fecha_reservacion - fecha_actual).days
+                if diferencia < 2:
+                    print("Error: No puedes hacer tu reservación, debe ser con dos días de anticipación!\n")
+                    continue
 
-        folio = id_reservaciones_contador
-        reservaciones[folio] = {
-            "id_cliente": usuario_encontrado[0],
-            "nombre_cliente": f"{usuario_encontrado[1]} {usuario_encontrado[2]}",
-            "nombre_evento": nombre_evento,
-            "id_sala": salon_encontrado[0],
-            "nombre_salon": salon_encontrado[1],
-            "fecha_reservacion": fecha_reservacion.strftime("%d/%m/%Y"),
-            "turno": turno
-        }
+                print("\n--Fecha aceptada!, ahora vamos a elegir el salón--\n")
+                if reservaciones:
+                    salones_reservados=mostrar_datos_salon_disponible_para_una_fecha(fecha_reservacion,salones,reservaciones)
+                else:
+                    salones_reservados=mostrar_datos_salon(salones)
+                salon_encontrado = buscar_salon(salones)
+                if salon_encontrado:
+                    print("\nId de salón aceptado!, ahora vamos a elegir el turno\n")
+                    while True:
+                        turno = input("Elige turno (Matutino / Vespertino / Nocturno): ").strip().capitalize()
+                        try:
+                            if salones_reservados[salon_encontrado[0]]["Turno"][turno]:
+                                print(f"\n{'*'*70}")
+                                print("\t--Turno aceptado!--")
+                                print(f"{'*'*70}\n")
+                            else:
+                                print(f"\n{'*'*70}")
+                                print(f"--Error: El turno {turno} no está disponible en ese salón, elija otro por favor.--")
+                                print(f"{'*'*70}\n")
+                                continue
+                        except KeyError:
+                            print(f"Esa sala no maneja ese turno, elija otor por favor.\n")
+                            continue
+                        break
 
-        id_reservaciones_contador += 1
+                    ocupado = False
+                    for r in reservaciones.values():
+                        if (r["id_sala"] == salon_encontrado[0] and
+                            r["fecha_reservacion"] == fecha_reservacion.strftime("%d/%m/%Y") and
+                            r["turno"] == turno):
+                            ocupado = True
+                            break
 
-        print(f"\nReservación registrada con éxito. Folio: {folio}\n")
-        print("-" * 60)
-        break
+                    if ocupado:
+                        print("Ese turno ya está reservado en esa sala para esa fecha.")
+                        continue
 
-    return id_reservaciones_contador
+                    while True:
+                        nombre_evento = input("Escribe el nombre del evento: ").strip()
+                        if nombre_evento == "" or nombre_evento.isdigit():
+                            print("El nombre no puede estar vacío. Intenta de nuevo.")
+                            continue
+                        break
+
+                    folio = max(reservaciones.keys(), default=0) + 1
+                    reservaciones[folio] = {
+                        "id_cliente": usuario_encontrado[0],
+                        "nombre_cliente": f"{usuario_encontrado[1]} {usuario_encontrado[2]}",
+                        "nombre_evento": nombre_evento,
+                        "id_sala": salon_encontrado[0],
+                        "nombre_salon": salon_encontrado[1],
+                        "fecha_reservacion": fecha_reservacion.strftime("%d/%m/%Y"),
+                        "turno": turno
+                    }
+
+                    print(f"\nReservación registrada con éxito. Folio: {folio}\n")
+                    print("-" * 60)
+                    break
+                else:
+                    print("Error: Ese salón no esta registrado!, volviendo al menú de registro de sala...")
+                    print(f"\n{'-'*60}")
+                    continue
+            else:
+                print(f"{'-'*60}\n")
+                print("--AVISO: Operación cancelada!, volviendo al menú principal...--")
+                print(f"\n{'-'*60}")
+                break
+        return None
+    else:
+        return None
 
 def main():
     """
     Función principal que muestra el menú y gestiona el flujo del sistema de reservaciones.
     """
     id_reservaciones_contador = 2
-    clientes = {
-        1: {"Nombre": "Fabian", "Apellidos": "Santana Dolores"},
-        2: {"Nombre": "Carlos", "Apellidos": "Hernandez Casas"},
-        3: {"Nombre": "Alvaro", "Apellidos": "Salazar  Gonzalez"}
-    }
-    salones = {
-        1: {"Nombre_salon": "Treviño Hernandez", "Cupo": 300, "Turno": {"Matutino": True, "Vespertino": True, "Nocturno": True}},
-        2: {"Nombre_salon": "Emiliano Zapata", "Cupo": 200, "Turno": {"Matutino": True, "Vespertino": True, "Nocturno": True}}
-    }
-    reservaciones = {
-        1: {"id_cliente": 1, "nombre_cliente": "Fabian Zantana Dolores", "nombre_evento": "Coferencia sobre ciber seguridad", "id_sala": 1, "nombre_salon": "Treviño Hernandez", "fecha_reservacion": "12/09/2026", "turno": "Vespertino"}
-    }
+    clientes = {}
+    salones = {}
+    reservaciones = {}
     while True:
         print(f"{'-'*10} Sistema para el registro de salas de coworking {'-'*10}\n")
         print("Bienvenido al menu de opciones...\n")
@@ -422,10 +478,10 @@ def main():
         op = input("Que opcion eliges? ")
 
         if op == "6":
-            print("Saliendo del sistema...")
+            print("\nSaliendo del sistema...")
             break
         elif op == "1":
-            id_reservaciones_contador = agregar_reservacion(clientes, salones, reservaciones, id_reservaciones_contador)
+            agregar_reservacion(clientes, salones, reservaciones)
         elif op == "2":
             editar_nombre_reservacion(reservaciones)
         elif op == "3":
