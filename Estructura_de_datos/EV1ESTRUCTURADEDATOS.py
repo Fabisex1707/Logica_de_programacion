@@ -348,6 +348,7 @@ def editar_nombre_reservacion(reservaciones: dict):
                 print(f"{'*'*70}")
                 print("--ERROR: Solo se admiten numeros enteros.--")
                 print(f"{'*'*70}\n")
+                print(tabulate(tabla, headers=["Folio", "Nombre del evento", "Fecha", "Nombre de la sala", "Turno"], tablefmt="fancy_grid"))
                 continue
 
             seleccionado = next((datos for f, datos in eventos if f == folio_sel), None)
@@ -355,6 +356,7 @@ def editar_nombre_reservacion(reservaciones: dict):
                 print(f"{'-'*60}\n")
                 print("\t\t--Folio inválido.--")
                 print(f"\n{'-'*60}\n")
+                print(tabulate(tabla, headers=["Folio", "Nombre del evento", "Fecha", "Nombre de la sala", "Turno"], tablefmt="fancy_grid"))
                 continue
             break
 
