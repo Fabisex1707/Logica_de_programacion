@@ -1,5 +1,78 @@
 from tabulate import tabulate
 import datetime
+import json
+import os
+
+ARCHIVO_REGISTRO = "Registro_Acabado.json"
+
+def cargar_estado_inicial():
+    """
+    Carga el estado guardado anteriormente desde el archivo JSON.
+    Si no existe, retorna diccionarios vacíos e informa al usuario.
+    """
+    print("\n" + "="*70)
+    print(" "*15 + "SISTEMA DE RESERVACIONES DE SALAS")
+    print("="*70)
+    print(" Buscando registros anteriores...")
+    
+    if os.path.exists(ARCHIVO_REGISTRO):
+        try:
+            with open(ARCHIVO_REGISTRO, 'r') as archivo:
+                estado = json.load(archivo)
+            
+            clientes = {int(id_clientes): datos_clientes for id_clientes, datos_clientes in estado.get("clientes", {}).items()}
+            salones = {int(id_salones): datos_salones for id_salones, datos_salones in estado.get("salones", {}).items()}
+            reservaciones = {int(id_reservaciones): datos_reservaciones for id_reservaciones, datos_reservaciones in estado.get("reservaciones", {}).items()}
+            
+            print("Datos anteriores encontrados y cargados exitosamente")
+            print("="*70 + "\n")
+            
+            return clientes, salones, reservaciones
+            
+        except json.JSONDecodeError:
+            print("El archivo existe pero está corrupto.")
+            print("Iniciando con registros vacíos...")
+            print("="*70 + "\n")
+            return {}, {}, {}
+        
+        except Exception as e:
+            print(f"Error al cargar datos: {e}")
+            print("Iniciando con registros vacíos...")
+            print("="*70 + "\n")
+            return {}, {}, {}
+    
+    else:
+        print("No se encontraron registros anteriores.")
+        print("Iniciando con registros vacíos...")
+        print("="*70 + "\n")
+        return {}, {}, {}
+
+def guardar_estado_final(clientes, salones, reservaciones):
+    """
+    Guarda todos los datos en el archivo JSON antes de salir del programa.
+    """
+    try:
+        estado = {
+            "clientes": clientes,
+            "salones": salones,
+            "reservaciones": reservaciones
+        }
+        
+        with open(ARCHIVO_REGISTRO, 'w') as archivo:
+            json.dump(estado, archivo, indent=4, ensure_ascii=False)
+        
+        print("\n" + "="*70)
+        print("GUARDANDO ESTADO DEL SISTEMA...")
+        print("="*70)
+        print(f"Datos guardados exitosamente en '{ARCHIVO_REGISTRO}'")
+        print("="*70)
+        print("\n Saliendio ...\n")
+        return True
+        
+    except Exception as e:
+        print(f"\n Error al guardar datos: {e}")
+        print(" Los cambios NO se guardaron.\n")
+        return False
 
 def convertir_str_a_date():
     """
@@ -277,7 +350,7 @@ def consultar_reservaciones_por_fecha(reservaciones: dict):
                 continue
             if fecha_reservacion==fecha_de_evento_dt:
                 datos_evento_consultado.append([
-                    folio, 
+                    datos_reservacion["id_sala"], 
                     datos_reservacion["nombre_cliente"], 
                     datos_reservacion["nombre_evento"], 
                     datos_reservacion["fecha_reservacion"], 
@@ -462,10 +535,9 @@ def agregar_reservacion(clientes, salones, reservaciones):
 def main():
     """
     Función principal que muestra el menú y gestiona el flujo del sistema de reservaciones.
+    Ahora incluye carga y guardado automático del estado.
     """
-    clientes = {}
-    salones = {}
-    reservaciones = {}
+    clientes, salones, reservaciones = cargar_estado_inicial()
     while True:
         print(f"{'-'*10} Sistema para el registro de salas de coworking {'-'*10}\n")
         print("Bienvenido al menu de opciones...\n")
@@ -478,7 +550,15 @@ def main():
         op = input("Que opcion eliges? ")
 
         if op == "6":
-            print("\nSaliendo del sistema...")
+            print("\n" + "="*70)
+            print("SALIENDO DEL SISTEMA...")
+            print("="*70)
+            guardar = input("¿Desea guardar los cambios antes de salir? (s/n): ").lower().strip()
+            
+            if guardar == 's':
+                guardar_estado_final(clientes, salones, reservaciones)
+            else:
+                print("\n  Los cambios NO se guardaron.")
             break
         elif op == "1":
             agregar_reservacion(clientes, salones, reservaciones)
