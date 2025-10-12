@@ -1,5 +1,5 @@
-# Ignorar el entorno virtual con otro nombre
-.json/
+# Ignorar el .json 
+*.json
 # Ignorar el entorno virtual con otro nombre
 env/
 # Ignorar el entorno virtual
