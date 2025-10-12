@@ -51,28 +51,37 @@ def guardar_estado_final(clientes, salones, reservaciones):
     """
     Guarda todos los datos en el archivo JSON antes de salir del programa.
     """
-    try:
-        estado = {
-            "clientes": clientes,
-            "salones": salones,
-            "reservaciones": reservaciones
-        }
-        
-        with open(ARCHIVO_REGISTRO, 'w') as archivo:
-            json.dump(estado, archivo, indent=4, ensure_ascii=False)
-        
-        print("\n" + "="*70)
-        print("GUARDANDO ESTADO DEL SISTEMA...")
-        print("="*70)
-        print(f"Datos guardados exitosamente en '{ARCHIVO_REGISTRO}'")
-        print("="*70)
-        print("\n Saliendio ...\n")
-        return True
-        
-    except Exception as e:
-        print(f"\n Error al guardar datos: {e}")
-        print(" Los cambios NO se guardaron.\n")
-        return False
+    print("\n" + "="*70)
+    print("SALIENDO DEL SISTEMA...")
+    print("="*70)
+    guardar = input("¿Desea guardar los cambios antes de salir? (s/n): ").lower().strip()
+            
+    if guardar == 's':
+            try:
+                estado = {
+                    "clientes": clientes,
+                    "salones": salones,
+                    "reservaciones": reservaciones
+                }
+                
+                with open(ARCHIVO_REGISTRO, 'w') as archivo:
+                    json.dump(estado, archivo, indent=4, ensure_ascii=False)
+                
+                print("\n" + "="*70)
+                print("GUARDANDO ESTADO DEL SISTEMA...")
+                print("="*70)
+                print(f"Datos guardados exitosamente en '{ARCHIVO_REGISTRO}'")
+                print("="*70)
+                print("\n Saliendio ...\n")
+                return True
+                
+            except Exception as e:
+                print(f"\n Error al guardar datos: {e}")
+                print(" Los cambios NO se guardaron.\n")
+                return False
+    elif guardar == 'n':
+        print("\n  Los cambios NO se guardaron.")
+    return False
 
 def convertir_str_a_date():
     """
@@ -325,48 +334,50 @@ def buscar_salon(diccionario_salones: dict,):
         
 def consultar_reservaciones_por_fecha(reservaciones: dict):
     """
-    Consulta y muestra todas las reservaciones dentro de un rango de fechas en formato de tabla.
-    Si no hay reservaciones en ese rango, muestra un mensaje.
-    Valida el formato de las fechas ingresadas por el usuario.
+    Consulta y muestra todas las reservaciones para una fecha específica en formato de tabla.
+    Pregunta al usuario si desea exportar los resultados a un archivo JSON.
     """
     if not reservaciones:
         print("No hay reservaciones registradas.")
         return
     while True:
-        fecha_de_evento_str = input("Escribe la fecha del evento (DD/MM/YYYY): ")
+        fecha = input("¿Para qué fecha deseas consultar la reservacion? (DD/MM/YYYY): ")
         try:
-            fecha_de_evento_dt = datetime.datetime.strptime(fecha_de_evento_str, "%d/%m/%Y").date()
-        except:
-            print(f"{'*'*70}")
-            print("--ERROR: Formato de fecha inválido.--")
-            print(f"{'*'*70}")
-            return None
+            fecha_dt = datetime.datetime.strptime(fecha, "%d/%m/%Y").date()
+            fecha = fecha_dt.strftime("%d/%m/%Y")
+            break
+        except ValueError:
+            print("Formato de fecha inválido. Intenta de nuevo (DD/MM/YYYY).")
+            continue
 
-        datos_evento_consultado = []
-        for folio, datos_reservacion in reservaciones.items():
-            try:
-                fecha_reservacion = datetime.datetime.strptime(datos_reservacion["fecha_reservacion"], "%d/%m/%Y").date()
-            except:
-                continue
-            if fecha_reservacion==fecha_de_evento_dt:
-                datos_evento_consultado.append([
-                    datos_reservacion["id_sala"], 
-                    datos_reservacion["nombre_cliente"], 
-                    datos_reservacion["nombre_evento"], 
-                    datos_reservacion["fecha_reservacion"], 
-                    datos_reservacion["turno"].upper()
-                ])
-        print(f"\n{'*'*70}")
-        print(f"\t** REPORTE DE RESERVACION DEL DIA {fecha_de_evento_str} **")
-        print(f"{'*'*70}")
-        if datos_evento_consultado:
-            print(tabulate(datos_evento_consultado, headers=["SALA", "CLIENTE", "EVENTO", "FECHA", "TURNO"], tablefmt="fancy_grid"))
-        else:
-            print(f"{'*'*70}")
-            print("\tAVISO: No hay una reservacion para esa fecha.")
-            print(f"{'*'*70}\n")
-        print("*************** FIN DEL REPORTE ***************\n")
-        return None
+    lista = []
+    for datos in reservaciones.values():
+        if datos["fecha_reservacion"] == fecha:
+            lista.append({
+                "SALA": datos["id_sala"],
+                "CLIENTE": datos["nombre_cliente"],
+                "EVENTO": datos["nombre_evento"],
+                "FECHA": datos["fecha_reservacion"],
+                "TURNO": datos["turno"].upper()
+            })
+    print("\n" + "*"*70)
+    print(f"** REPORTE DE RESERVACIONES PARA EL DÍA {fecha} **")
+    print("*"*70)
+    if lista:
+        print(tabulate(
+            [[d["SALA"], d["CLIENTE"], d["EVENTO"], d["FECHA"], d["TURNO"]] for d in lista],
+            headers=["SALA", "CLIENTE", "EVENTO", "FECHA", "TURNO"],
+            tablefmt="fancy_grid"
+        ))
+        exportar = input("\n¿Desea exportar el reporte a JSON? (s/n): ").strip().lower()
+        if exportar == "s":
+            with open("reporte_reservaciones.json", "w") as f:
+                json.dump(lista, f, ensure_ascii=False, indent=4)
+            print("\nReporte exportado a 'reporte_reservaciones.json'.")
+    else:
+        print("No hay reservaciones para esa fecha.")
+    print("*"*70)
+    print("*************** FIN DEL REPORTE ***************\n")
 
 def editar_nombre_reservacion(reservaciones: dict):
     """
@@ -550,15 +561,7 @@ def main():
         op = input("Que opcion eliges? ")
 
         if op == "6":
-            print("\n" + "="*70)
-            print("SALIENDO DEL SISTEMA...")
-            print("="*70)
-            guardar = input("¿Desea guardar los cambios antes de salir? (s/n): ").lower().strip()
-            
-            if guardar == 's':
-                guardar_estado_final(clientes, salones, reservaciones)
-            else:
-                print("\n  Los cambios NO se guardaron.")
+            guardar_estado_final(clientes, salones, reservaciones)
             break
         elif op == "1":
             agregar_reservacion(clientes, salones, reservaciones)

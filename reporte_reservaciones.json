@@ -1,0 +1,16 @@
+[
+    {
+        "SALA": 1,
+        "CLIENTE": "Fabi Cas",
+        "EVENTO": "Cas2",
+        "FECHA": "20/10/2025",
+        "TURNO": "MATUTINO"
+    },
+    {
+        "SALA": 1,
+        "CLIENTE": "Fabi Cas",
+        "EVENTO": "cas3",
+        "FECHA": "20/10/2025",
+        "TURNO": "VESPERTINO"
+    }
+]
