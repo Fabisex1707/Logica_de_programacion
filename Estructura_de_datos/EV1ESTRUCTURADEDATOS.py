@@ -89,14 +89,19 @@ def convertir_str_a_date():
     Si el usuario presiona Enter sin escribir nada, retorna False para cancelar la operación.
     """
     while True:
-        str_fecha_evento = input("Escribe la fecha de tu evento (DD/MM/YYYY) o [Enter] para cancelar la operacion: ")
-        if str_fecha_evento.strip() == '':
+        str_fecha_evento = input("Escribe la fecha de tu evento (DD-MM-YYYY) o [Enter] para cancelar la operacion: ")
+        str_fecha_evento_formateada = str_fecha_evento.replace("-", "/").strip()
+        print(str_fecha_evento_formateada)
+        if str_fecha_evento_formateada == '':
             return False
+        elif str_fecha_evento_formateada == str_fecha_evento:
+            print("\n--Error:Debes usar el formato DD-MM-YYYY para la fecha!--\n")
+            continue
         try:
-            fecha_reservacion = datetime.datetime.strptime(str_fecha_evento, "%d/%m/%Y").date()
+            fecha_reservacion = datetime.datetime.strptime(str_fecha_evento_formateada, "%d/%m/%Y").date()
             return fecha_reservacion
         except:
-            print("El formato de la fecha es invalido, digitela de nuevo!")
+            print("\n--Error:El formato de la fecha es invalido, digitela de nuevo!--\n")
             continue
 
 def registrar_cliente(diccionario_cliente: dict):
