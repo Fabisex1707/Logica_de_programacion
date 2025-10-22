@@ -12,6 +12,8 @@ except Error as e:
     print(f"Ocurrio un error al crear la base de datos: {e}\n")
 except:
     print(f"Ocurrio un error inesperado: {sys.exc_info()[0]}\n")
+finally:
+    conn.close()
 
 
 while True:
@@ -62,9 +64,9 @@ while True:
             with sqlite3.connect("sistema_de_amigos.db") as conn:
                 mi_cursor_consulta=conn.cursor()
                 mi_cursor_consulta.execute("SELECT * FROM amigos WHERE id_amigo = ?;", (int(id_amigo_consulta),))
-                amigo_encontrado=mi_cursor_consulta.fetchone()
+                amigo_encontrado=mi_cursor_consulta.fetchall()
                 if amigo_encontrado:
-                    print(tabulate([amigo_encontrado], headers=["ID Amigo", "Nombre", "Apellidos"], tablefmt="fancy_grid"))
+                    print(tabulate(amigo_encontrado, headers=["ID Amigo", "Nombre", "Apellidos"], tablefmt="fancy_grid"))
                 else:
                     print(f"\nNo se encontro ningun amigo con el id {id_amigo_consulta}.\n")
         except Error as e:
