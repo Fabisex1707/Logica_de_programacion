@@ -3,8 +3,9 @@ from sqlite3 import Error, IntegrityError
 import sys
 from tabulate import tabulate
 from CONEXIONBD import crear_base_de_datos_y_tablas
+import datetime
 
-def registrar_cliente(nombre, apellidos):
+def insertar_cliente(nombre, apellidos):
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -19,20 +20,54 @@ def registrar_cliente(nombre, apellidos):
     finally:
         conn.close()
 
-def registrar_sala(nombre_salon, cupo):
+def insertar_sala(nombre_salon, cupo):
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO Salones_registrados (nombre_salon, cupo) VALUES (?, ?);", (nombre_salon, cupo))
             print(f"{'*'*60}\n")
-            print(f"--Sala {nombre_salon} registrado exitosamente con el id: {cursor.lastrowid}.--")
+            print(f"--Sala {nombre_salon} registrada exitosamente con el id: {cursor.lastrowid}.--")
             print(f"{'-'*60}\n")
     except Error as e:
-        print(f"Error al registrar el cliente: {e}")
+        print(f"Error al registrar la sala: {e}")
     except:
         print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
     finally:
         conn.close()
+
+def registrar_cliente():
+    print(f"\n{'*'*60}")
+    print("\tVamos a registrar un nuevo cliente")
+    print(f"{'-'*60}\n")
+
+    nombre_cliente = input("Escribe el nombre del cliente: ").strip().upper()
+    apellidos_cliente = input("Escribe los apellidos del cliente: ").strip().upper()
+
+    if nombre_cliente == "" or apellidos_cliente == "":
+        print("Debes ingresar un nombre y apellidos validos!")
+        return
+    if not (all(letra.isalpha() or letra.isspace() for letra in nombre_cliente) and all(letra.isalpha() or letra.isspace() for letra in apellidos_cliente)):
+        print("Debes ingresar un nombre y apellidos validos!")
+        return
+
+    insertar_cliente(nombre_cliente, apellidos_cliente)
+
+def registrar_sala():
+    print(f"\n{'*'*60}")
+    print("\tVamos a registrar una nueva sala")
+    print(f"{'-'*60}\n")
+
+    nombre_salon = input("Escribe el nombre del salon: ").strip().upper()
+    cupo = input("Escribe el cupo del salon: ").strip()
+
+    if nombre_salon == "" or cupo == "":
+        print("Debes ingresar un nombre de salon y cupo validos!")
+        return
+    if not (all(letra.isalpha() or letra.isspace() for letra in nombre_salon) and cupo.isdigit()):
+        print("Debes ingresar un nombre de salon y cupo validos!")
+        return
+
+    insertar_sala(nombre_salon, int(cupo))
 
 def estado_turno(turno):
     return "DISPONIBLE" if turno else "NO DISPONIBLE"
@@ -173,6 +208,7 @@ def mostrar_disponibilidad_de_sala_por_fecha(fecha_iso):
             """
             cur.execute(sql, (fecha_iso,))
             reservaciones = cur.fetchall()
+            print(reservaciones)
             salones_disponibles = []
             for reservacion in reservaciones:
                 salones_disponibles.append(reservacion[0:3] + (estado_turno(reservacion[9]), estado_turno(reservacion[10]), estado_turno(reservacion[11])))
@@ -181,7 +217,7 @@ def mostrar_disponibilidad_de_sala_por_fecha(fecha_iso):
                 print("Lista de salones registrados:\n")
                 print(tabulate(salones_disponibles, headers=["ID Salon", "Nombre Salon", "Cupo", "Turno Matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
                 print(f"{'-'*60}\n")
-                return None
+                return reservaciones
             else:
                 print("No hay salones registrados.")
                 return None
@@ -219,29 +255,61 @@ def registrar_reservacion():
     mostrar_clientes()
     id_cliente = input("Escribe el id del cliente: ").strip()
     cliente_encontrado = buscar_cliente_por_id(id_cliente)
+
     if cliente_encontrado is None:
         print("El id del cliente no existe.")
         return
+    
     nombre_cliente = cliente_encontrado[1]
     str_fecha_reservacion = input("Escribe la fecha de la reservacion (YYYY-MM-DD): ").strip()
     fecha_reservacion_dt=str_fecha_a_date(str_fecha_reservacion)
+
     if fecha_reservacion_dt is None:
         return
-    mostrar_disponibilidad_de_sala_por_fecha(str_fecha_reservacion)
+    else:
+        fecha_actual = datetime.datetime.today().date()
+        diferencia = (fecha_reservacion_dt - fecha_actual).days
+        if diferencia < 2:
+            print("Error: No puedes hacer tu reservación, debe ser con dos días de anticipación!\n")
+            return
+        else:
+            dia_semana = fecha_reservacion_dt.strftime("%A")
+            if dia_semana in ("Domingo", "Sunday"):
+                print("Error: No puedes hacer tu reservaciones los domingos!\n")
+                return
+        
+    datos_salon_de_una_fecha=mostrar_disponibilidad_de_sala_por_fecha(str_fecha_reservacion)
     id_salon = input("Escribe el id del salon: ").strip()
     salon_encontrado = buscar_salon_por_id(id_salon)
+
     if salon_encontrado is None:
         print("El id del salon no existe.")
         return
+    
     nombre_salon = salon_encontrado[1]
     turno = input("Escribe el turno (Matutino, Vespertino, Nocturno): ").strip().capitalize()
+
     if turno not in ['Matutino', 'Vespertino', 'Nocturno']:
         print("Turno invalido. Debe ser Matutino, Vespertino o Nocturno.")
         return
+    else:
+        for dato in datos_salon_de_una_fecha:
+            if str(dato[0]) == id_salon:
+                if turno == 'Matutino' and dato[9] == 0:
+                    print("\nEl turno Matutino no esta disponible para este salon en la fecha seleccionada.\n")
+                    return
+                elif turno == 'Vespertino' and dato[10] == 0:
+                    print("\nEl turno Vespertino no esta disponible para este salon en la fecha seleccionada.\n")
+                    return
+                elif turno == 'Nocturno' and dato[11] == 0:
+                    print("\nEl turno Nocturno no esta disponible para este salon en la fecha seleccionada.\n")
+                    return
+    
     nombre_evento = input("Escribe el nombre del evento: ").strip().upper()
     if nombre_evento == "":
         print("El nombre del evento no puede estar vacio.")
         return
+    
     insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, str_fecha_reservacion, turno)
         
 def main():
@@ -261,37 +329,9 @@ def main():
             print("saliendo del sistema...")
             break
         elif opcion == "1":
-            print(f"\n{'*'*60}")
-            print("\tVamos a registrar un nuevo cliente")
-            print(f"{'-'*60}\n")
-
-            nombre_cliente = input("Escribe el nombre del cliente: ").strip().upper()
-            apellidos_cliente = input("Escribe los apellidos del cliente: ").strip().upper()
-
-            if nombre_cliente == "" or apellidos_cliente == "":
-                print("Debes ingresar un nombre y apellidos validos!")
-                continue
-            elif all(letra.isalpha() or letra.isspace() for letra in nombre_cliente) and all(letra.isalpha() or letra.isspace() for letra in apellidos_cliente):
-                registrar_cliente(nombre_cliente, apellidos_cliente)
-            else:
-                print("Debes ingresar un nombre y apellidos validos!")
-                continue
+            registrar_cliente()
         elif opcion == "2":
-            print(f"\n{'*'*60}")
-            print("\tVamos a registrar una nueva sala")
-            print(f"{'-'*60}\n")
-
-            nombre_salon = input("Escribe el nombre del salon: ").strip().upper()
-            cupo = input("Escribe el cupo del salon: ").strip()
-
-            if nombre_salon == "" or cupo == "":
-                print("Debes ingresar un nombre de salon y cupo validos!")
-                continue
-            elif all(letra.isalpha() or letra.isspace() for letra in nombre_salon) and cupo.isdigit():
-                registrar_sala(nombre_salon, int(cupo))
-            else:
-                print("Debes ingresar un nombre de salon y cupo validos!")
-                continue
+            registrar_sala()
         elif opcion == "3":
             mostrar_salones()
         elif opcion == "4":
