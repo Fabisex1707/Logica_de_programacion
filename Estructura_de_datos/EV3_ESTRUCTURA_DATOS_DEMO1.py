@@ -244,10 +244,6 @@ def registrar_reservacion():
         return
     insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, str_fecha_reservacion, turno)
         
-
-
-
-
 def main():
     crear_base_de_datos_y_tablas()
     while True:
