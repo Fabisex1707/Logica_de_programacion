@@ -13,7 +13,8 @@ except Error as e:
 except:
     print(f"Ocurrio un error inesperado: {sys.exc_info()[0]}\n")
 finally:
-    conn.close()
+    if conn:
+        conn.close()
 
 
 while True:
@@ -50,7 +51,8 @@ while True:
             except:
                 print(f"Ocurrio un error inesperado: {sys.exc_info()[0]}")
             finally:
-                conn.close()    
+                if conn:
+                    conn.close()    
         else:
             print("\nDebes de ingresar un nombre y apellidos validos!\n")
             continue 
@@ -74,7 +76,8 @@ while True:
         except:
             print(f"\nOcurrio un error inesperado: {sys.exc_info()[0]}")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     elif opcion=="3":
         print(f"\n{'*'*60}")
@@ -97,7 +100,8 @@ while True:
         except:
             print(f"\nOcurrio un error inesperado: {sys.exc_info()[0]}")
         finally:
-            conn.close()
+            if conn:
+                conn.close()
     else:
         print("\nDebes de elegir una opcion valida!\n")
         continue
