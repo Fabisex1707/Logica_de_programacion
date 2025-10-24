@@ -3,7 +3,7 @@ from sqlite3 import Error, IntegrityError
 import sys
 from tabulate import tabulate
 from CONEXIONBD import crear_base_de_datos_y_tablas
-import datetime
+from datetime import datetime
 
 def insertar_cliente(nombre, apellidos):
     try:
@@ -18,7 +18,8 @@ def insertar_cliente(nombre, apellidos):
     except:
         print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def insertar_sala(nombre_salon, cupo):
     try:
@@ -95,6 +96,7 @@ def mostrar_salones():
     finally:
         if conn:
             conn.close()
+
 def mostrar_clientes():
     try:
         with sqlite3.connect("reservaciones.db") as conn:
@@ -172,7 +174,6 @@ def buscar_cliente_por_id(id_cliente):
             conn.close()
 
 def str_fecha_a_date(fecha_str):
-    from datetime import datetime
     try:
         fecha_date = datetime.strptime(fecha_str, "%Y-%m-%d").date()
         return fecha_date
@@ -267,7 +268,7 @@ def registrar_reservacion():
     if fecha_reservacion_dt is None:
         return
     else:
-        fecha_actual = datetime.datetime.today().date()
+        fecha_actual = datetime.today().date()
         diferencia = (fecha_reservacion_dt - fecha_actual).days
         if diferencia < 2:
             print("Error: No puedes hacer tu reservación, debe ser con dos días de anticipación!\n")
