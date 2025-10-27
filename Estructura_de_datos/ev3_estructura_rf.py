@@ -116,20 +116,6 @@ def selccionar_salones_registrados():
         if conn:
             conn.close()
 
-def mostrar_salones():
-    salones=selccionar_salones_registrados()
-    salones_disponibles = []
-    for salon in salones:
-        salones_disponibles.append(salon[0:3] + (estado_turno(salon[3]), estado_turno(salon[4]), estado_turno(salon[5])))
-        if salones_disponibles:
-            print(f"{'*'*60}\n")
-            print("Lista de salones registrados:\n")
-            print(tabulate(salones_disponibles, headers=["ID Salon", "Nombre Salon", "Cupo", "Turno Matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
-            print(f"{'-'*60}\n")
-        else:
-            print("No hay salones registrados.")
-
-
 def selccionar_clientes_registrados():
     try:
         with sqlite3.connect("reservaciones.db") as conn:
@@ -156,27 +142,6 @@ def mostrar_clientes():
         print(f"{'-'*60}\n")
     else:
         print("No hay clientes registrados.")
-
-def mostrar_reservaciones():
-    try:
-        with sqlite3.connect("reservaciones.db") as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM reservaciones;")
-            reservaciones = cursor.fetchall()
-            if reservaciones:
-                print(f"{'*'*60}\n")
-                print("Lista de reservaciones registradas:\n")
-                print(tabulate(reservaciones, headers=["ID Reservacion", "ID Cliente", "Nombre Cliente", "Nombre Evento", "ID Salon", "Nombre Salon", "Fecha Reservacion", "Turno"], tablefmt="fancy_grid"))
-                print(f"{'-'*60}\n")
-            else:
-                print("No hay reservaciones registradas.")
-    except Error as e:
-        print(f"Error al obtener las reservaciones: {e}")
-    except:
-        print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
-    finally:
-        if conn:
-            conn.close()    
 
 def buscar_salon_por_id(id_salon):
     try:
@@ -348,11 +313,13 @@ def consultar_reservaciones_por_fecha():
             "Turno": turno
         })
 
-    print(tabulate(
+    tbl_formato_correcto=tabulate(
         tabla_para_mostrar,
         headers=["Sala","Cliente","Evento","Turno"],
-        tablefmt="grid"
-    ))
+        tablefmt="simple"
+    )
+    
+    print(tbl_formato_correcto.replace("-", "*"))
 
     while True:
         respuesta_exportar = input("\n¿Desea exportar el reporte a JSON? (s/n): ").strip().lower()
