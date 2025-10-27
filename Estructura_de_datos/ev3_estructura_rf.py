@@ -5,8 +5,6 @@ from tabulate import tabulate
 from CONEXIONBD import crear_base_de_datos_y_tablas
 from datetime import datetime
 import json
-import os
-
 
 def insertar_cliente(nombre, apellidos):
     try:
