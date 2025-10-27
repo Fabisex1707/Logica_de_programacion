@@ -99,51 +99,63 @@ def registrar_salon():
 def estado_turno(turno):
     return "DISPONIBLE" if turno else "NO DISPONIBLE"
 
-def mostrar_salones():
+def selccionar_salones_registrados():
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Salones_registrados;")
             salones = cursor.fetchall()
-            salones_disponibles = []
-            for salon in salones:
-                salones_disponibles.append(salon[0:3] + (estado_turno(salon[3]), estado_turno(salon[4]), estado_turno(salon[5])))
-            if salones_disponibles:
-                print(f"{'*'*60}\n")
-                print("Lista de salones registrados:\n")
-                print(tabulate(salones_disponibles, headers=["ID Salon", "Nombre Salon", "Cupo", "Turno Matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
-                print(f"{'-'*60}\n")
-            else:
-                print("No hay salones registrados.")
+            return salones
     except Error as e:
         print(f"Error al obtener los salones: {e}")
+        return []
     except:
         print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
+        return []
     finally:
         if conn:
             conn.close()
 
-def mostrar_clientes():
+def mostrar_salones():
+    salones=selccionar_salones_registrados()
+    salones_disponibles = []
+    for salon in salones:
+        salones_disponibles.append(salon[0:3] + (estado_turno(salon[3]), estado_turno(salon[4]), estado_turno(salon[5])))
+        if salones_disponibles:
+            print(f"{'*'*60}\n")
+            print("Lista de salones registrados:\n")
+            print(tabulate(salones_disponibles, headers=["ID Salon", "Nombre Salon", "Cupo", "Turno Matutino", "Turno Vespertino", "Turno Nocturno"], tablefmt="fancy_grid"))
+            print(f"{'-'*60}\n")
+        else:
+            print("No hay salones registrados.")
+
+
+def selccionar_clientes_registrados():
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM Clientes_registrados;")
             clientes = cursor.fetchall()
-            if clientes:
-                print(f"{'*'*60}\n")
-                print("Lista de clientes registrados:\n")
-                print(tabulate(clientes, headers=["ID Cliente", "Nombre Cliente", "Apellidos Cliente"], tablefmt="fancy_grid"))
-                print(f"{'-'*60}\n")
-            else:
-                print("No hay clientes registrados.")
-                return "Vacio"
+            return clientes
     except Error as e:
         print(f"Error al obtener los clientes: {e}")
+        return []
     except:
         print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
+        return []
     finally:
         if conn:
             conn.close()
+
+def mostrar_clientes():
+    clientes=selccionar_clientes_registrados()
+    if clientes:
+        print(f"{'*'*60}\n")
+        print("Lista de clientes registrados:\n")
+        print(tabulate(clientes, headers=["ID Cliente", "Nombre Cliente", "Apellidos Cliente"], tablefmt="fancy_grid"))
+        print(f"{'-'*60}\n")
+    else:
+        print("No hay clientes registrados.")
 
 def mostrar_reservaciones():
     try:
@@ -283,6 +295,9 @@ y que se repita el pedirel a el usuario los datos hasta que sean registrados de 
 def consultar_reservaciones_por_fecha():
     while True:
         fecha_entrada = input("¿Para qué fecha deseas consultar la reservacion? (MM-DD-YYYY): ").strip()
+        if fecha_entrada == "": 
+            fecha_entrada= datetime.today().strftime("%m-%d-%Y")
+
         try:
             fecha_dt = datetime.strptime(fecha_entrada, "%m-%d-%Y").date()
             break
@@ -304,7 +319,7 @@ def consultar_reservaciones_por_fecha():
         return
 
     print("\n" + "*" * 70)
-    print(f"** REPORTE DE RESERVACIONES PARA EL DÍA {fecha_dt} **")
+    print(f"** REPORTE DE RESERVACIONES PARA EL DÍA {fecha_entrada} **")
     print("*" * 70)
 
     if not filas:
@@ -320,31 +335,23 @@ def consultar_reservaciones_por_fecha():
         id_salon, nombre_salon, fecha_reservacion, turno) = fila
 
         tabla_para_mostrar.append([
-            id_reservacion,
-            id_cliente,
+            id_salon,
             nombre_cliente,
             nombre_evento,
-            id_salon,
-            nombre_salon,
-            fecha_reservacion,
             turno
         ])
 
         lista_para_json.append({
-            "ID_Reservacion": id_reservacion,
-            "ID_Cliente": id_cliente,
+            "ID_Salon": id_salon,
             "Nombre_Cliente": nombre_cliente,
             "Evento": nombre_evento,
-            "ID_Salon": id_salon,
-            "Nombre_Salon": nombre_salon,
-            "Fecha": fecha_reservacion,
             "Turno": turno
         })
 
     print(tabulate(
         tabla_para_mostrar,
-        headers=["ID Reserv.", "ID Cliente", "Nombre Cliente", "Evento", "ID Salon", "Nombre Salon", "Fecha", "Turno"],
-        tablefmt="fancy_grid"
+        headers=["Sala","Cliente","Evento","Turno"],
+        tablefmt="grid"
     ))
 
     while True:
@@ -450,11 +457,17 @@ def registrar_reservacion():
     print(f"{'*'*60}")
     print("Registrar una nueva reservacion")
     print(f"{'-'*60}\n")
-    hay_clientes=mostrar_clientes()
+    hay_clientes=selccionar_clientes_registrados()
+    hay_salones=selccionar_salones_registrados()
 
-    if hay_clientes == "Vacio":
+    if hay_clientes and hay_salones:
+        pass
+    else:
+        print("No hay clientes O salones registrados. Por favor, registra clientes y salones antes de hacer una reservacion.\n")
         return None
     
+    mostrar_clientes()
+
     while True:
         id_cliente = input("Escribe el id del cliente: ").strip()
         cliente_encontrado = buscar_cliente_por_id(id_cliente)
@@ -485,7 +498,7 @@ def registrar_reservacion():
         
         dia_semana = fecha_reservacion_dt.strftime("%A")
         if dia_semana in ("Domingo", "Sunday"):
-            print("Error: No puedes hacer tu reservación los domingos!\n")
+            print("Error: No puedes hacer tu reservación los domingos, elija el siguiente dia lunes!\n")
             continue
         
         break
