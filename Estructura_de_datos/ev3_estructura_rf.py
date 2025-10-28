@@ -5,6 +5,19 @@ from tabulate import tabulate
 from CONEXIONBD import crear_base_de_datos_y_tablas
 from datetime import datetime
 import json
+import os
+
+def inicializar_base_de_datos():
+    DB_FILE="reservaciones.db"
+    if os.path.exists(DB_FILE):
+        print(f"{'*'*60}\n")
+        print(f"Base de datos encontrada: {DB_FILE}")
+        print(f"{'-'*60}\n")
+    else:
+        print(f"{'*'*60}\n")
+        print(f"No se encontró la base de datos. Creando una nueva en: {DB_FILE}")
+        print(f"{'-'*60}\n")
+        crear_base_de_datos_y_tablas()
 
 def insertar_cliente(nombre, apellidos):
     try:
@@ -64,8 +77,7 @@ def registrar_cliente():
         else:
             print("El nombre no puede contener numeros ni caracteres especiales. intenta de nuevo.\n")
             continue
-    insertar_cliente(nombre_cliente, apellidos_cliente) 
-    print(f"\n Cliente registrado: {nombre_cliente} {apellidos_cliente}\n")
+    insertar_cliente(nombre_cliente, apellidos_cliente)
 
 
 def registrar_salon():
@@ -133,6 +145,7 @@ def selccionar_clientes_registrados():
 
 def mostrar_clientes():
     clientes=selccionar_clientes_registrados()
+    clientes.sort(key=lambda x: x[2]) 
     if clientes:
         print(f"{'*'*60}\n")
         print("Lista de clientes registrados:\n")
@@ -206,6 +219,7 @@ def mostrar_disponibilidad_de_salon_por_fecha(fecha_iso):
             LEFT JOIN reservaciones r
             ON s.id_salon = r.id_salon
             AND r.fecha_reservacion = ?
+            AND r.estado_reservacion = 'Activa'
             GROUP BY s.id_salon, s.nombre_salon, s.cupo, s.turno_matutino, s.turno_vespertino, s.turno_nocturno
             ORDER BY s.id_salon;
             """
@@ -272,9 +286,10 @@ def consultar_reservaciones_por_fecha():
             cursor = conexion.cursor()
             cursor.execute("""
                 SELECT id_reservacion, id_cliente, nombre_cliente, nombre_evento,
-                id_salon, nombre_salon, fecha_reservacion, turno
+                id_salon, nombre_salon, fecha_reservacion, turno, estado_reservacion
                 FROM reservaciones
-                WHERE fecha_reservacion = ?;
+                WHERE fecha_reservacion = ? AND estado_reservacion = 'Activa'
+                ORDER BY id_salon, turno;
             """, (fecha_entrada,))
             filas = cursor.fetchall()
     except sqlite3.Error as error_bd:
@@ -295,7 +310,7 @@ def consultar_reservaciones_por_fecha():
     lista_para_json = []
     for fila in filas:
         (id_reservacion, id_cliente, nombre_cliente, nombre_evento,
-        id_salon, nombre_salon, fecha_reservacion, turno) = fila
+        id_salon, nombre_salon, fecha_reservacion, turno, estado_reservacion) = fila
 
         tabla_para_mostrar.append([
             id_salon,
@@ -308,7 +323,8 @@ def consultar_reservaciones_por_fecha():
             "ID_Salon": id_salon,
             "Nombre_Cliente": nombre_cliente,
             "Evento": nombre_evento,
-            "Turno": turno
+            "Turno": turno,
+            "Estado_Reservacion": estado_reservacion
         })
 
     tbl_formato_correcto=tabulate(
@@ -361,9 +377,9 @@ def editar_nombre_reservacion():
             with sqlite3.connect("reservaciones.db") as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT id_reservacion, nombre_evento, fecha_reservacion, nombre_salon, turno
+                    SELECT id_reservacion, nombre_evento, fecha_reservacion
                     FROM reservaciones
-                    WHERE fecha_reservacion BETWEEN ? AND ?
+                    WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
                     ORDER BY fecha_reservacion;
                 """, (fecha_inicio_str, fecha_fin_str))
                 eventos = cursor.fetchall()
@@ -372,7 +388,7 @@ def editar_nombre_reservacion():
                 print("No hay eventos registrados en ese rango de fechas.")
                 return
 
-            print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha", "Nombre Salon", "Turno"], tablefmt="fancy_grid"))
+            print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
 
             while True:
                 folio_str = input("\nIngresa el folio del evento a modificar o Enter para cancelar: ").strip()
@@ -406,7 +422,7 @@ def editar_nombre_reservacion():
                 cursor.execute("""
                     UPDATE reservaciones
                     SET nombre_evento = ?
-                    WHERE id_reservacion = ?;
+                    WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
                 """, (nuevo_nombre, folio))
                 conn.commit()
 
@@ -454,7 +470,6 @@ def registrar_reservacion():
             continue
         
         fecha_actual = datetime.today().date()
-        print(fecha_actual)
         diferencia = (fecha_reservacion_dt - fecha_actual).days
         
         if diferencia < 2:
@@ -517,9 +532,99 @@ def registrar_reservacion():
         break
 
     insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, str_fecha_reservacion, turno)
+
+def actualizar_estado_reservacion():
+    while True:
+        try:
+            print(f"{'*'*60}")
+            print("Vamos a cancelar una reservación")
+            print(f"{'-'*60}\n")
+
+            fecha_inicio_str = input("Ingresa la fecha de inicio (MM-DD-YYYY): ").strip()
+            fecha_fin_str = input("Ingresa la fecha de fin (MM-DD-YYYY): ").strip()
+
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, "%m-%d-%Y")
+                fecha_fin = datetime.strptime(fecha_fin_str, "%m-%d-%Y")
+            except ValueError:
+                print("Formato de fecha inválido. Usa MM-DD-YYYY.")
+                return
+
+            if fecha_inicio == "" or fecha_fin == "":
+                print("No se permite dejar el rango de fechas vacío.")
+                continue
+
+            with sqlite3.connect("reservaciones.db") as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id_reservacion, nombre_evento, fecha_reservacion
+                    FROM reservaciones
+                    WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
+                    ORDER BY fecha_reservacion;
+                """, (fecha_inicio_str, fecha_fin_str))
+                eventos = cursor.fetchall()
+
+            if not eventos:
+                print("No hay eventos registrados en ese rango de fechas.")
+                return
+
+            print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+
+            while True:
+                folio_str = input("\nIngresa el folio del evento a cancelar o Enter para cancelar la operacion: ").strip()
+                if folio_str == "":
+                    print("Operación cancelada.")
+                    return
+
+                if not folio_str.isdigit():
+                    print("Solo se admiten números enteros. Intenta de nuevo.")
+                    continue
+
+                folio = int(folio_str)
+                evento_seleccionado = next((evento for evento in eventos if evento[0] == folio), None)
+                fecha_evento_seleccionado = datetime.strptime(evento_seleccionado[2], "%m-%d-%Y").date()
+                fecha_actual = datetime.today().date()
+                diferencia = (fecha_evento_seleccionado - fecha_actual).days
+
+                if evento_seleccionado is None:
+                    print("El ID ingresado no pertenece al rango mostrado. Intenta de nuevo.")
+                elif diferencia < 2:
+                    print("Error: No puedes cancelar la reservación, debe ser con dos días de anticipación!\n")
+                else:
+                    break
+
+            while True:
+                cancelar = input(f"Quieres cancelar el evento '{evento_seleccionado[1]}? (s/n)': ").strip().upper()
+                if cancelar == "":
+                    print("Respuesta no puede estar vacia. Intenta de nuevo.")
+                elif cancelar.isdigit():
+                    print("El nombre del evento no puede contener solo números. Intenta de nuevo.")
+                elif cancelar not in ['S', 'N']:
+                    print("Respuesta inválida. Debe ser 's' o 'n'. Intenta de nuevo.")
+                elif cancelar == 'S':
+                    break
+                else:
+                    print("Operación de cancelación abortada por el usuario.")
+                    print(f"{'-'*60}\n")
+                    return   
+
+            with sqlite3.connect("reservaciones.db") as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE reservaciones
+                    SET estado_reservacion = ?
+                    WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
+                """, ('Cancelada', folio))
+                conn.commit()
+
+            print(f"\nEvento cancelado exitosamente: {evento_seleccionado[1]}")
+        except sqlite3.Error as e:
+            print(f"Error al acceder a la base de datos: {e}")
+        except Exception:
+            print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")
             
 def main():
-    crear_base_de_datos_y_tablas()
+    inicializar_base_de_datos()
     while True:
         print(f"{'*'*60}")
         print("Sistema para el registro de salas de coworking\n")
@@ -527,12 +632,13 @@ def main():
         print("1. Hacer una reservacion")
         print("2. Editar nombre de reservacion")
         print("3. Consultar reservaciones por fecha")
-        print("4. Registrar un nuevo cliente")
-        print("5. Registrar un nuevo salon")
-        print("6. Salir\n")
+        print("4. Cancelar una reservacion")
+        print("5. Registrar un nuevo cliente")
+        print("6. Registrar un nuevo salon")
+        print("7. Salir\n")
         
         opcion = input("Que opcion eliges? ")
-        if opcion == "6":
+        if opcion == "7":
             print("saliendo del sistema...")
             break
         elif opcion == "1":
@@ -542,8 +648,10 @@ def main():
         elif opcion == "3":
             consultar_reservaciones_por_fecha()
         elif opcion == "4":
-            registrar_cliente()
+            actualizar_estado_reservacion()
         elif opcion == "5":
+            registrar_cliente()
+        elif opcion == "6":
             registrar_salon()
         else:
             print("Opcion invalida. Intenta de nuevo.\n")

@@ -41,11 +41,18 @@ def crear_base_de_datos_y_tablas():
                     nombre_salon TEXT NOT NULL,
                     fecha_reservacion TEXT NOT NULL,
                     turno TEXT NOT NULL CHECK (turno IN ('Matutino','Vespertino','Nocturno')),
+                    estado_reservacion TEXT DEFAULT 'Activa' CHECK (estado_reservacion IN ('Activa','Cancelada')),
                     FOREIGN KEY (id_cliente) REFERENCES Clientes_registrados (id_cliente) ON DELETE CASCADE,
-                    FOREIGN KEY (id_salon) REFERENCES Salones_registrados (id_salon) ON DELETE CASCADE,
-                    UNIQUE (id_salon, fecha_reservacion, turno)
+                    FOREIGN KEY (id_salon) REFERENCES Salones_registrados (id_salon) ON DELETE CASCADE
                 );
             """)
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS ux_reserva_unica_activa
+                ON reservaciones(id_salon, fecha_reservacion, turno)
+                WHERE estado_reservacion = 'Activa';
+            """)
+
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reserva_sala_fecha ON reservaciones(id_salon, fecha_reservacion, turno);")
     except Error as e:
         print(f"Error al conectar con la base de datos: {e}")
     except Exception:
