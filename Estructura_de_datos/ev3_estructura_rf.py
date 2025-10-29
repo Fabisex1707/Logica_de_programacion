@@ -59,8 +59,9 @@ def registrar_cliente():
         nombre_cliente = input("Escribe el nombre del cliente: ").strip().upper()
 
         if nombre_cliente == "":
+            print(f"{'*'*60}\n")
             print("El nombre no puede estar vacío. Intenta de nuevo.\n")
-            continue
+            return 
         elif all(letra.isalpha() or letra.isspace() for letra in nombre_cliente):
             break
         else:
@@ -70,12 +71,13 @@ def registrar_cliente():
     while True:
         apellidos_cliente = input("Escribe los apellidos del cliente: ").strip().upper()
         if apellidos_cliente == "":
+            print(f"{'*'*60}\n")
             print("Los apellidos no pueden estar vacíos. Intenta de nuevo.\n")
-            continue
+            return
         elif all(letra.isalpha() or letra.isspace() for letra in apellidos_cliente):
             break
         else:
-            print("El nombre no puede contener numeros ni caracteres especiales. intenta de nuevo.\n")
+            print("Los apellidos no puede contener numeros ni caracteres especiales. intenta de nuevo.\n")
             continue
     insertar_cliente(nombre_cliente, apellidos_cliente)
 
@@ -87,22 +89,24 @@ def registrar_salon():
     while True:
         nombre_salon = input("Escribe el nombre del salon: ").strip().upper()
         if nombre_salon == "":
+            print(f"{'*'*60}\n")
             print("El nombre no puede estar vacio. Intenta de nuevo.\n")
-            continue
+            return
         if all(letra.isalpha() or letra.isspace() for letra in nombre_salon):
             break
         else:
-            print("Debes ingresar un nombre de salon y cupo validos!\n")
+            print("Debes ingresar un nombre sin caracteres especiales o numeros!\n")
             continue
     while True:
         cupo = input("Escribe el cupo del salon: ").strip()
         if cupo == "":
+            print(f"{'*'*60}\n")
             print("El cupo no puede quedar vacio. Intenta de nuevo.\n")
-            continue
-        elif cupo.isdigit():
+            return
+        elif cupo.isdigit() and int(cupo) > 0:
             break
         else:
-            print("El cupo debe ser un número entero positivo. Intenta de nuevo.\n")
+            print("El cupo debe ser un número entero positivo mayor a 0. Intenta de nuevo.\n")
             continue
     insertar_salon(nombre_salon, int(cupo))
 
@@ -193,7 +197,9 @@ def str_fecha_a_date(fecha_str):
         fecha_date = datetime.strptime(fecha_str, "%m-%d-%Y").date()
         return fecha_date
     except ValueError:
-        print("Formato de fecha incorrecto. Usa MM-DD-YYYY.")
+        print(f"{'*'*60}\n")
+        print("Formato de fecha incorrecto. Usa MM-DD-YYYY.\n")
+        print(f"{'-'*60}\n")
         return None
     
 
@@ -243,6 +249,9 @@ def mostrar_disponibilidad_de_salon_por_fecha(fecha_iso):
     except:
         print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
         return None
+    finally:
+        if conn:
+            conn.close()
 
 def insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, fecha_reservacion, turno):
     try:
@@ -292,8 +301,8 @@ def consultar_reservaciones_por_fecha():
                 ORDER BY id_salon, turno;
             """, (fecha_entrada,))
             filas = cursor.fetchall()
-    except sqlite3.Error as error_bd:
-        print(f"Error al consultar la base de datos: {error_bd}")
+    except Error as e:
+        print(f"Error al consultar la base de datos: {e}")
         return
 
     print("\n" + "*" * 70)
@@ -354,85 +363,83 @@ def consultar_reservaciones_por_fecha():
     print("*************** FIN DEL REPORTE ***************\n")
 
 def editar_nombre_reservacion():
-    while True:
-        try:
-            print(f"{'*'*60}")
-            print("Vamos a editar el nombre de una reservación")
-            print(f"{'-'*60}\n")
-
+    try:
+        print(f"{'*'*60}")
+        print("Vamos a editar el nombre de una reservación")
+        print(f"{'-'*60}\n")    
+        while True:
             fecha_inicio_str = input("Ingresa la fecha de inicio (MM-DD-YYYY): ").strip()
             fecha_fin_str = input("Ingresa la fecha de fin (MM-DD-YYYY): ").strip()
+
+            if fecha_inicio_str == "" or fecha_fin_str == "":
+                print("No se permite dejar el rango de fechas vacío.")
+                return
 
             try:
                 fecha_inicio = datetime.strptime(fecha_inicio_str, "%m-%d-%Y")
                 fecha_fin = datetime.strptime(fecha_fin_str, "%m-%d-%Y")
+                break
             except ValueError:
                 print("Formato de fecha inválido. Usa MM-DD-YYYY.")
-                return
-
-            if fecha_inicio == "" or fecha_fin == "":
-                print("No se permite dejar el rango de fechas vacío.")
                 continue
 
-            with sqlite3.connect("reservaciones.db") as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT id_reservacion, nombre_evento, fecha_reservacion
-                    FROM reservaciones
-                    WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
-                    ORDER BY fecha_reservacion;
-                """, (fecha_inicio_str, fecha_fin_str))
-                eventos = cursor.fetchall()
+        with sqlite3.connect("reservaciones.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id_reservacion, nombre_evento, fecha_reservacion
+                FROM reservaciones
+                WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
+                ORDER BY id_reservacion;
+            """, (fecha_inicio_str, fecha_fin_str))
+            eventos = cursor.fetchall()
 
-            if not eventos:
-                print("No hay eventos registrados en ese rango de fechas.")
+        if not eventos:
+            print("No hay eventos registrados en ese rango de fechas.")
+            return
+
+        print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+
+        while True:
+            folio_str = input("\nIngresa el folio del evento a modificar o Enter para cancelar: ").strip()
+            if folio_str == "":
+                print(f"{'*'*60}\n")
+                print("Operación cancelada por el usario.\n")
                 return
 
-            print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+            if not folio_str.isdigit():
+                print("Solo se admiten números enteros. Intenta de nuevo.")
+                continue
 
-            while True:
-                folio_str = input("\nIngresa el folio del evento a modificar o Enter para cancelar: ").strip()
-                if folio_str == "":
-                    print("Operación cancelada.")
-                    return
+            folio = int(folio_str)
+            evento_seleccionado = next((evento for evento in eventos if evento[0] == folio), None)
 
-                if not folio_str.isdigit():
-                    print("Solo se admiten números enteros. Intenta de nuevo.")
-                    continue
+            if evento_seleccionado is None:
+                print("El ID ingresado no pertenece al rango mostrado. Intenta de nuevo.")
+            else:
+                break
 
-                folio = int(folio_str)
-                evento_seleccionado = next((evento for evento in eventos if evento[0] == folio), None)
+        while True:
+            nuevo_nombre = input(f"Escribe el nuevo nombre para el evento '{evento_seleccionado[1]}': ").strip().upper()
+            if nuevo_nombre == "":
+                print("El nombre del evento no puede estar vacío. Intenta de nuevo.")
+            elif nuevo_nombre.isdigit():
+                print("El nombre del evento no puede contener solo números. Intenta de nuevo.")
+            else:
+                break
 
-                if evento_seleccionado is None:
-                    print("El ID ingresado no pertenece al rango mostrado. Intenta de nuevo.")
-                else:
-                    break
-
-            while True:
-                nuevo_nombre = input(f"Escribe el nuevo nombre para el evento '{evento_seleccionado[1]}': ").strip().upper()
-                if nuevo_nombre == "":
-                    print("El nombre del evento no puede estar vacío. Intenta de nuevo.")
-                elif nuevo_nombre.isdigit():
-                    print("El nombre del evento no puede contener solo números. Intenta de nuevo.")
-                else:
-                    break
-
-            with sqlite3.connect("reservaciones.db") as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    UPDATE reservaciones
-                    SET nombre_evento = ?
-                    WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
-                """, (nuevo_nombre, folio))
-                conn.commit()
-
-            print(f"\nEvento actualizado exitosamente a: {nuevo_nombre}")
-
-
-        except sqlite3.Error as e:
-            print(f"Error al acceder a la base de datos: {e}")
-        except Exception:
-            print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")
+        with sqlite3.connect("reservaciones.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE reservaciones
+                SET nombre_evento = ?
+                WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
+            """, (nuevo_nombre, folio))
+            conn.commit()
+        print(f"\nEvento actualizado exitosamente a: {nuevo_nombre}")
+    except sqlite3.Error as e:
+        print(f"Error al acceder a la base de datos: {e}")
+    except Exception:
+        print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")    
 
 def registrar_reservacion():
     print(f"{'*'*60}")
@@ -485,7 +492,12 @@ def registrar_reservacion():
 
     while True:        
         datos_salon_de_una_fecha = mostrar_disponibilidad_de_salon_por_fecha(str_fecha_reservacion)
-        id_salon = input("Escribe el id del salon: ").strip()
+        id_salon = input("Escribe el id del salon o enter para cancelar la operacion: ").strip()
+        if id_salon == "":
+            print(f"{'*'*60}\n")
+            print("Operación de reservacion cancelada por el usuario.\n")
+            return None
+        
         salon_encontrado = buscar_salon_por_id(id_salon)
 
         if salon_encontrado is None:
@@ -534,94 +546,107 @@ def registrar_reservacion():
     insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, str_fecha_reservacion, turno)
 
 def actualizar_estado_reservacion():
-    while True:
-        try:
-            print(f"{'*'*60}")
-            print("Vamos a cancelar una reservación")
-            print(f"{'-'*60}\n")
-
+    try:
+        print(f"{'*'*60}")
+        print("Vamos a cancelar una reservación")
+        print(f"{'-'*60}\n")
+        while True:
             fecha_inicio_str = input("Ingresa la fecha de inicio (MM-DD-YYYY): ").strip()
             fecha_fin_str = input("Ingresa la fecha de fin (MM-DD-YYYY): ").strip()
 
-            try:
-                fecha_inicio = datetime.strptime(fecha_inicio_str, "%m-%d-%Y")
-                fecha_fin = datetime.strptime(fecha_fin_str, "%m-%d-%Y")
-            except ValueError:
-                print("Formato de fecha inválido. Usa MM-DD-YYYY.")
+            if fecha_inicio_str == "" or fecha_fin_str == "":
+                print(f"{'*'*60}\n")
+                print("No se permite dejar el rango de fechas vacío.\n")
                 return
+
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio_str, "%m-%d-%Y").date()
+                fecha_actual = datetime.today().date()
+                diferencia = (fecha_inicio - fecha_actual).days
+                if diferencia < 2:
+                    print(f"{'*'*60}\n")
+                    print("Error: No puedes cancelar la reservación, debe ser con dos días de anticipación!\n")
+                    return
+                fecha_fin = datetime.strptime(fecha_fin_str, "%m-%d-%Y").date()
+            except ValueError:
+                print(f"{'*'*60}\n")
+                print("\tFormato de fecha inválido. Usa MM-DD-YYYY.\n")
+                print(f"{'*'*60}\n")
+                continue
 
             if fecha_inicio == "" or fecha_fin == "":
                 print("No se permite dejar el rango de fechas vacío.")
                 continue
+            else:
+                break
 
-            with sqlite3.connect("reservaciones.db") as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT id_reservacion, nombre_evento, fecha_reservacion
-                    FROM reservaciones
-                    WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
-                    ORDER BY fecha_reservacion;
-                """, (fecha_inicio_str, fecha_fin_str))
-                eventos = cursor.fetchall()
+        with sqlite3.connect("reservaciones.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id_reservacion, nombre_evento, fecha_reservacion
+                FROM reservaciones
+                WHERE fecha_reservacion BETWEEN ? AND ? AND estado_reservacion = 'Activa'
+                ORDER BY id_reservacion;
+            """, (fecha_inicio_str, fecha_fin_str))
+            eventos = cursor.fetchall()
 
-            if not eventos:
-                print("No hay eventos registrados en ese rango de fechas.")
+        if eventos:
+            pass
+        else:
+            print(f"{'*'*60}\n")
+            print("No hay eventos registrados en ese rango de fechas.\n")
+            return
+
+        print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+
+        while True:
+            folio_str = input("\nIngresa el folio del evento a cancelar o Enter para cancelar la operacion: ").strip()
+            if folio_str == "":
+                print("Operación cancelada.")
                 return
 
-            print(tabulate(eventos, headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+            if not folio_str.isdigit():
+                print("Solo se admiten números enteros. Intenta de nuevo.")
+                continue
 
-            while True:
-                folio_str = input("\nIngresa el folio del evento a cancelar o Enter para cancelar la operacion: ").strip()
-                if folio_str == "":
-                    print("Operación cancelada.")
-                    return
+            folio = int(folio_str)
+            evento_seleccionado = next((evento for evento in eventos if evento[0] == folio), None)
 
-                if not folio_str.isdigit():
-                    print("Solo se admiten números enteros. Intenta de nuevo.")
-                    continue
+            if evento_seleccionado is None:
+                print("El ID ingresado no pertenece al rango mostrado. Intenta de nuevo.")
+            else:
+                break
 
-                folio = int(folio_str)
-                evento_seleccionado = next((evento for evento in eventos if evento[0] == folio), None)
-                fecha_evento_seleccionado = datetime.strptime(evento_seleccionado[2], "%m-%d-%Y").date()
-                fecha_actual = datetime.today().date()
-                diferencia = (fecha_evento_seleccionado - fecha_actual).days
+        while True:
+            print(tabulate([evento_seleccionado], headers=["Folio", "Nombre Evento", "Fecha"], tablefmt="fancy_grid"))
+            cancelar = input(f"Quieres cancelar el evento '{evento_seleccionado[1]}? (s/n)': ").strip().upper()
+            if cancelar == "":
+                print("\nRespuesta no puede estar vacia. Intenta de nuevo.\n")
+            elif cancelar.isdigit():
+                print("\nEl nombre del evento no puede contener solo números. Intenta de nuevo.\n")
+            elif cancelar not in ['S', 'N']:
+                print("\nRespuesta inválida. Debe ser 's' o 'n'. Intenta de nuevo.\n")
+            elif cancelar == 'S':
+                break
+            else:
+                print("Operación de cancelación abortada por el usuario.")
+                print(f"{'-'*60}\n")
+                return   
 
-                if evento_seleccionado is None:
-                    print("El ID ingresado no pertenece al rango mostrado. Intenta de nuevo.")
-                elif diferencia < 2:
-                    print("Error: No puedes cancelar la reservación, debe ser con dos días de anticipación!\n")
-                else:
-                    break
+        with sqlite3.connect("reservaciones.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE reservaciones
+                SET estado_reservacion = ?
+                WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
+            """, ('Cancelada', folio))
+            conn.commit()
 
-            while True:
-                cancelar = input(f"Quieres cancelar el evento '{evento_seleccionado[1]}? (s/n)': ").strip().upper()
-                if cancelar == "":
-                    print("Respuesta no puede estar vacia. Intenta de nuevo.")
-                elif cancelar.isdigit():
-                    print("El nombre del evento no puede contener solo números. Intenta de nuevo.")
-                elif cancelar not in ['S', 'N']:
-                    print("Respuesta inválida. Debe ser 's' o 'n'. Intenta de nuevo.")
-                elif cancelar == 'S':
-                    break
-                else:
-                    print("Operación de cancelación abortada por el usuario.")
-                    print(f"{'-'*60}\n")
-                    return   
-
-            with sqlite3.connect("reservaciones.db") as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    UPDATE reservaciones
-                    SET estado_reservacion = ?
-                    WHERE id_reservacion = ? AND estado_reservacion = 'Activa';
-                """, ('Cancelada', folio))
-                conn.commit()
-
-            print(f"\nEvento cancelado exitosamente: {evento_seleccionado[1]}")
-        except sqlite3.Error as e:
-            print(f"Error al acceder a la base de datos: {e}")
-        except Exception:
-            print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")
+        print(f"\nEvento cancelado exitosamente: {evento_seleccionado[1]}")
+    except Error as e:
+        print(f"Error al acceder a la base de datos: {e}")
+    except Exception:
+        print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")
             
 def main():
     inicializar_base_de_datos()
