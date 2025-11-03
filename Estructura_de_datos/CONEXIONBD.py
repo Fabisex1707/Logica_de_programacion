@@ -2,6 +2,14 @@ import sqlite3
 from sqlite3 import Error
 import sys
 def crear_base_de_datos_y_tablas():
+    """
+    Crea la base de datos 'reservaciones.db' y las tablas necesarias:
+    - Clientes_registrados
+    - Salones_registrados   
+    - reservaciones
+    
+    Maneja errores de conexión y creación de tablas.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -18,7 +26,7 @@ def crear_base_de_datos_y_tablas():
                 );
             """)
 
-            # creacion de tabla salones (turnos como INTEGER 0/1)
+            # creacion de tabla salones 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS Salones_registrados (
                     id_salon INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +38,7 @@ def crear_base_de_datos_y_tablas():
                 );
             """)
 
-            # creacion de tabla reservaciones (FK correctamente escritas)
+            # creacion de tabla reservaciones 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS reservaciones (
                     id_reservacion INTEGER PRIMARY KEY AUTOINCREMENT,

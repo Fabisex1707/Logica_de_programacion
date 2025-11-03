@@ -24,6 +24,13 @@ def inicializar_base_de_datos():
         crear_base_de_datos_y_tablas()
 
 def insertar_cliente(nombre, apellidos):
+    """
+    Inserta un nuevo cliente en la tabla Clientes_registrados.
+
+    Args:
+        nombre (str): Nombre del cliente.
+        apellidos (str): Apellidos del cliente.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -40,6 +47,13 @@ def insertar_cliente(nombre, apellidos):
             conn.close()
 
 def insertar_salon(nombre_salon, cupo):
+    """
+    Inserta un nuevo salón en la tabla Salones_registrados.
+
+    Args:
+        nombre_salon (str): Nombre del salón.
+        cupo (int): Capacidad máxima del salón.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -55,6 +69,10 @@ def insertar_salon(nombre_salon, cupo):
         conn.close()
 
 def registrar_cliente():
+    """
+    Solicita al usuario el nombre y apellidos para registrar un nuevo cliente.
+    Realiza validaciones para asegurar que los campos no estén vacíos y sean alfabéticos.
+    """
     print(f"\n{'*'*60}")
     print("\tVamos a registrar un nuevo cliente")
     print(f"{'-'*60}\n")
@@ -87,6 +105,10 @@ def registrar_cliente():
 
 
 def registrar_salon():
+    """
+    Solicita al usuario el nombre y cupo para registrar un nuevo salón.
+    Realiza validaciones para asegurar que los campos no estén vacíos y el cupo sea numérico.
+    """
     print(f"\n{'*'*60}")
     print("\tVamos a registrar una nueva salon")
     print(f"{'-'*60}\n")
@@ -115,9 +137,24 @@ def registrar_salon():
     insertar_salon(nombre_salon, int(cupo))
 
 def estado_turno(turno):
+    """
+    Convierte un valor de estado de turno (1/0 o True/False) a una cadena legible.
+
+    Args:
+        turno (int or bool): El estado del turno (1/True es disponible).
+
+    Returns:
+        str: "DISPONIBLE" o "NO DISPONIBLE".
+    """
     return "DISPONIBLE" if turno else "NO DISPONIBLE"
 
 def selccionar_salones_registrados():
+    """
+    Consulta y devuelve todos los salones de la tabla Salones_registrados.
+
+    Returns:
+        list: Una lista de tuplas con los datos de los salones, o lista vacía si hay error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -135,6 +172,12 @@ def selccionar_salones_registrados():
             conn.close()
 
 def selccionar_clientes_registrados():
+    """
+    Consulta y devuelve todos los clientes de la tabla Clientes_registrados.
+
+    Returns:
+        list: Una lista de tuplas con los datos de los clientes, o lista vacía si hay error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -155,6 +198,12 @@ def selccionar_clientes_registrados():
             conn.close()
 
 def selccionar_reservaciones():
+    """
+    Consulta y devuelve todos las reservaciones de la tabla reservaciones.
+
+    Returns:
+        list: Una lista de tuplas con los datos de las reservaciones, o lista vacía si hay error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -172,6 +221,10 @@ def selccionar_reservaciones():
             conn.close()
 
 def mostrar_clientes():
+    """
+    Obtiene y muestra en una tabla formateada la lista de clientes registrados,
+    ordenados por apellidos.
+    """
     clientes=selccionar_clientes_registrados()
     if clientes:
         print(f"{'*'*60}\n")
@@ -182,6 +235,15 @@ def mostrar_clientes():
         print("No hay clientes registrados.")
 
 def buscar_salon_por_id(id_salon):
+    """
+    Busca y devuelve los datos de un salón específico por su ID.
+
+    Args:
+        id_salon (str or int): El ID del salón a buscar.
+
+    Returns:
+        tuple: Los datos del salón si se encuentra, o None si no existe o hay error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -199,6 +261,15 @@ def buscar_salon_por_id(id_salon):
             conn.close()
 
 def buscar_cliente_por_id(id_cliente):
+    """
+    Busca y devuelve los datos de un cliente específico por su ID.
+
+    Args:
+        id_cliente (str or int): El ID del cliente a buscar.
+
+    Returns:
+        tuple: Los datos del cliente si se encuentra, o None si no existe o hay error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -216,6 +287,15 @@ def buscar_cliente_por_id(id_cliente):
             conn.close()
 
 def str_fecha_a_date(fecha_str):
+    """
+    Convierte una cadena de texto (formato MM-DD-YYYY) a un objeto date.
+
+    Args:
+        fecha_str (str): La fecha en formato "MM-DD-YYYY".
+
+    Returns:
+        datetime.date: El objeto date si la conversión es exitosa, o None si el formato es incorrecto.
+    """
     try:
         fecha_date = datetime.strptime(fecha_str, "%m-%d-%Y").date()
         return fecha_date
@@ -227,6 +307,17 @@ def str_fecha_a_date(fecha_str):
     
 
 def mostrar_disponibilidad_de_salon_por_fecha(fecha_iso):
+    """
+    Consulta y muestra una tabla con la disponibilidad de todos los salones
+    para una fecha específica, indicando qué turnos están libres u ocupados.
+
+    Args:
+        fecha_iso (str): La fecha a consultar (formato "MM-DD-YYYY").
+
+    Returns:
+        list: Los resultados crudos de la consulta (incluyendo disponibilidad)
+              o None si no hay salones o hay un error.
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cur = conn.cursor()
@@ -277,6 +368,19 @@ def mostrar_disponibilidad_de_salon_por_fecha(fecha_iso):
             conn.close()
 
 def insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, fecha_reservacion, turno):
+    """
+    Inserta una nueva reservación en la tabla 'reservaciones'.
+    Maneja errores de integridad (ej. duplicados).
+
+    Args:
+        id_cliente (int): ID del cliente.
+        nombre_cliente (str): Nombre del cliente.
+        nombre_evento (str): Nombre del evento.
+        id_salon (int): ID del salón.
+        nombre_salon (str): Nombre del salón.
+        fecha_reservacion (str): Fecha (MM-DD-YYYY).
+        turno (str): Turno ('Matutino', 'Vespertino', 'Nocturno').
+    """
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
@@ -296,10 +400,6 @@ def insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, no
     finally:
         if conn:
             conn.close()
-
-'''se agrega bucle while para verificar que los datos sean correctos.
-Que se cumplan con los parametros requeridos 
-y que se repita el pedirel a el usuario los datos hasta que sean registrados de forma correcta'''
 
 def consultar_reservaciones_por_fecha():
     """
