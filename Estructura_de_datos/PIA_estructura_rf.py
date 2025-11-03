@@ -8,6 +8,10 @@ import json
 import os
 
 def inicializar_base_de_datos():
+    """
+    Inicializa y verifica la base de datos del sistema.
+    Crea una nueva base de datos con sus tablas si no existe.
+    """
     DB_FILE="reservaciones.db"
     if os.path.exists(DB_FILE):
         print(f"{'*'*60}\n")
@@ -134,7 +138,10 @@ def selccionar_clientes_registrados():
     try:
         with sqlite3.connect("reservaciones.db") as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM Clientes_registrados;")
+            cursor.execute("""
+                            SELECT id_cliente,nombre_cliente,apellidos_cliente
+                            FROM Clientes_registrados 
+                            ORDER BY apellidos_cliente;""")
             clientes = cursor.fetchall()
             return clientes
     except Error as e:
@@ -147,9 +154,25 @@ def selccionar_clientes_registrados():
         if conn:
             conn.close()
 
+def selccionar_reservaciones():
+    try:
+        with sqlite3.connect("reservaciones.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM reservaciones;")
+            reservaciones = cursor.fetchall()
+            return reservaciones
+    except Error as e:
+        print(f"Error al obtener las reservaciones: {e}")
+        return []
+    except:
+        print(f"Ocurrio un error inesperado de tipo: {sys.exc_info()[0]}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+
 def mostrar_clientes():
     clientes=selccionar_clientes_registrados()
-    clientes.sort(key=lambda x: x[2]) 
     if clientes:
         print(f"{'*'*60}\n")
         print("Lista de clientes registrados:\n")
@@ -279,6 +302,21 @@ Que se cumplan con los parametros requeridos
 y que se repita el pedirel a el usuario los datos hasta que sean registrados de forma correcta'''
 
 def consultar_reservaciones_por_fecha():
+    """
+    Consulta y muestra reservaciones activas por fecha.
+
+    Funcionalidad:
+    - Formato fecha: MM-DD-YYYY (usa fecha actual si no se especifica)
+    - Muestra reporte tabular ordenado por salón y turno
+    - Permite exportar a JSON
+    """
+    reservaciones=selccionar_reservaciones()
+    if reservaciones:
+        pass
+    else:
+        print(f"{'*'*60}\n")
+        print("No hay reservaciones registradas.\n")
+        return
     while True:
         fecha_entrada = input("¿Para qué fecha deseas consultar la reservacion? (MM-DD-YYYY): ").strip()
         if fecha_entrada == "": 
@@ -363,7 +401,24 @@ def consultar_reservaciones_por_fecha():
     print("*************** FIN DEL REPORTE ***************\n")
 
 def editar_nombre_reservacion():
+    """
+    Modifica el nombre de un evento en una reservación activa.
+
+    Proceso:
+    - Busca eventos por rango de fechas
+    - Permite selección por folio
+    - Actualiza nombre en base de datos
+
+    Validaciones: formato fecha, existencia del evento, nombre válido
+    """
     try:
+        reservaciones=selccionar_reservaciones()
+        if reservaciones:
+            pass
+        else:
+            print(f"{'*'*60}\n")
+            print("No hay reservaciones registradas.\n")
+            return
         print(f"{'*'*60}")
         print("Vamos a editar el nombre de una reservación")
         print(f"{'-'*60}\n")    
@@ -442,6 +497,15 @@ def editar_nombre_reservacion():
         print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")    
 
 def registrar_reservacion():
+    """
+    Gestiona el registro de una nueva reservación.
+
+    Validaciones principales:
+    - Existencia de clientes y salones
+    - Fecha futura (mínimo 2 días)
+    - No reservaciones en domingo
+    - Disponibilidad de salón y turno
+    """
     print(f"{'*'*60}")
     print("Registrar una nueva reservacion")
     print(f"{'-'*60}\n")
@@ -546,7 +610,23 @@ def registrar_reservacion():
     insertar_reservacion(id_cliente, nombre_cliente, nombre_evento, id_salon, nombre_salon, str_fecha_reservacion, turno)
 
 def actualizar_estado_reservacion():
+    """
+    Cancela una reservación existente.
+
+    Requisitos:
+    - Cancelación con 2 días de anticipación
+    - Selección por rango de fechas y folio
+    - Confirmación explícita
+    - Solo reservaciones activas
+    """
     try:
+        reservaciones=selccionar_reservaciones()
+        if reservaciones:
+            pass
+        else:
+            print(f"{'*'*60}\n")
+            print("No hay reservaciones registradas.\n")
+            return
         print(f"{'*'*60}")
         print("Vamos a cancelar una reservación")
         print(f"{'-'*60}\n")
@@ -649,6 +729,12 @@ def actualizar_estado_reservacion():
         print(f"Ocurrió un error inesperado: {sys.exc_info()[0]}")
             
 def main():
+    """
+    Punto de entrada principal del sistema de reservaciones.
+    
+    Menú: Reservar, Editar, Consultar, Cancelar, 
+          Registrar Cliente/Salón, Salir
+    """
     inicializar_base_de_datos()
     while True:
         print(f"{'*'*60}")
