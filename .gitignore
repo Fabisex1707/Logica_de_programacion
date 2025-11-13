@@ -1,4 +1,4 @@
-# Ignorar el .json 
+# Ignorar el .pkl 
 *.pkl
 # Ignorar el .json 
 *.json
