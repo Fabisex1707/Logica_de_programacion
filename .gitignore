@@ -1,4 +1,6 @@
 # Ignorar el .json 
+*.pkl
+# Ignorar el .json 
 *.json
 # Ignorar el entorno virtual con otro nombre
 env/
